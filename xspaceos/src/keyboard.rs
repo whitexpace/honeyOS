@@ -17,6 +17,8 @@ const DATA_PORT: u16 = 0x60;
 
 /// Whether a Shift key is currently held, so letters can be upper/lower case.
 static mut SHIFT_HELD: bool = false;
+/// Whether a Ctrl key is currently held.
+static mut CTRL_HELD: bool = false;
 
 /// A decoded key press, returned by [`read_key`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +32,10 @@ pub enum Key {
     Down,
     Left,
     Right,
+    Delete,
+    CtrlS,
+    CtrlX,
+    CtrlR,
 }
 
 /// Maps scancode set 1 "make codes" (index 0x00..0x39) to ASCII characters.
@@ -102,13 +108,14 @@ fn decode(scancode: u8) -> u8 {
 
 /// Block until a meaningful key is pressed, then return it as a [`Key`].
 ///
-/// Key *releases* are consumed silently (except Shift, whose state is
+/// Key *releases* are consumed silently (except Shift/Ctrl, whose state is
 /// tracked) so callers only ever see actual key presses.
 pub fn read_key() -> Key {
     loop {
         let code = wait_for_scancode();
 
-        // Arrow keys arrive as a 0xE0 prefix followed by the real code.
+        // Arrow keys and extended keys (Delete, Right Ctrl) arrive as a 0xE0
+        // prefix followed by the real code.
         if code == 0xE0 {
             let extended = wait_for_scancode();
             match extended {
@@ -116,20 +123,22 @@ pub fn read_key() -> Key {
                 0x50 => return Key::Down,
                 0x4B => return Key::Left,
                 0x4D => return Key::Right,
-                _ => continue, // extended release or unhandled extended key
+                0x53 => return Key::Delete,
+                // Right Ctrl make / break
+                0x1D => { unsafe { CTRL_HELD = true }; continue; }
+                0x9D => { unsafe { CTRL_HELD = false }; continue; }
+                _ => continue,
             }
         }
 
-        // Update Shift state on press / release of either Shift key.
+        // Update Shift and Ctrl state on press / release.
         match code {
-            0x2A | 0x36 => {
-                unsafe { SHIFT_HELD = true };
-                continue;
-            }
-            0xAA | 0xB6 => {
-                unsafe { SHIFT_HELD = false };
-                continue;
-            }
+            0x2A | 0x36 => { unsafe { SHIFT_HELD = true }; continue; }
+            0xAA | 0xB6 => { unsafe { SHIFT_HELD = false }; continue; }
+            // Left Ctrl make (0x1D) and break (0x9D) — must be before the
+            // `& 0x80` break-code filter below since 0x9D has bit 7 set.
+            0x1D => { unsafe { CTRL_HELD = true }; continue; }
+            0x9D => { unsafe { CTRL_HELD = false }; continue; }
             _ => {}
         }
 
@@ -145,9 +154,18 @@ pub fn read_key() -> Key {
             _ => {
                 let ascii = decode(code);
                 if ascii != 0 {
-                    return Key::Char(ascii);
+                    if unsafe { CTRL_HELD } {
+                        // Normalize to lowercase to handle Shift+Ctrl combos.
+                        match ascii | 0x20 {
+                            b's' => return Key::CtrlS,
+                            b'x' => return Key::CtrlX,
+                            b'r' => return Key::CtrlR,
+                            _ => {} // other Ctrl combos: ignore
+                        }
+                    } else {
+                        return Key::Char(ascii);
+                    }
                 }
-                // Unprintable key with no special meaning: keep waiting.
             }
         }
     }

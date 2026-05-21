@@ -19,7 +19,7 @@ const MAX_FILES: usize = 8;
 /// Maximum length, in bytes, of a file name.
 const MAX_NAME_LEN: usize = 32;
 /// Maximum length, in bytes, of a file's contents.
-const MAX_CONTENT_LEN: usize = 512;
+pub const MAX_CONTENT_LEN: usize = 512;
 
 /// Errors that a file system operation can return.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -169,6 +169,25 @@ impl FileSystem {
     /// Number of files currently stored.
     pub fn file_count(&self) -> usize {
         self.files.iter().filter(|f| f.used).count()
+    }
+
+    /// RENAME: change a file's name without altering its contents.
+    pub fn rename(&mut self, old_name: &str, new_name: &str) -> Result<(), FsError> {
+        if new_name.is_empty() || new_name.len() > MAX_NAME_LEN {
+            return Err(FsError::BadName);
+        }
+        if self.find(new_name).is_some() {
+            return Err(FsError::AlreadyExists);
+        }
+        let idx = self.find(old_name).ok_or(FsError::NotFound)?;
+        let file = &mut self.files[idx];
+        file.name[..new_name.len()].copy_from_slice(new_name.as_bytes());
+        // Zero out any leftover bytes from a longer previous name.
+        for b in file.name[new_name.len()..file.name_len].iter_mut() {
+            *b = 0;
+        }
+        file.name_len = new_name.len();
+        Ok(())
     }
 
     /// Visit every live file, passing its name and content length to `visit`.
