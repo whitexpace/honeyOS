@@ -93,6 +93,59 @@ You can also run the image manually:
 qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
 ```
 
+## Run in VirtualBox
+
+This project does not produce an installer ISO. Instead, it builds a bootable
+raw disk image:
+
+```text
+target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+```
+
+QEMU can boot that raw image directly. VirtualBox is easier to use if you
+convert the raw image into a `vdi` disk first.
+
+### Build a VirtualBox Disk
+
+This repository includes a helper script:
+
+```sh
+./scripts/build-virtualbox-disk.sh
+```
+
+The script:
+
+1. runs `cargo bootimage`
+2. reads `target/x86_64-xspaceos/debug/bootimage-xspaceos.bin`
+3. converts it to `xspaceos.vdi` using `qemu-img`
+
+If you prefer the manual conversion step:
+
+```sh
+qemu-img convert -f raw -O vdi \
+  target/x86_64-xspaceos/debug/bootimage-xspaceos.bin \
+  xspaceos.vdi
+```
+
+### Boot in VirtualBox
+
+Use these settings when creating the VM:
+
+- Type: `Other` or `Unknown`
+- Version: `Other/Unknown (64-bit)` or the closest `x86_64` option
+- Hard disk: use `xspaceos.vdi`
+- System firmware: disable EFI and use legacy BIOS boot
+
+Then power on the VM. If the firmware cooperates with the bootloader, the VM
+should boot into the XSpace OS file manager.
+
+### Compatibility Note
+
+QEMU is still the reference platform for this project. VirtualBox may work, but
+it is not the primary environment used by the current build setup. If
+VirtualBox fails to boot the image, test the same kernel image in QEMU first to
+confirm that the build output is valid.
+
 ## Project Layout
 
 ```text
