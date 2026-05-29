@@ -17,6 +17,8 @@ const DATA_PORT: u16 = 0x60;
 
 /// Whether a Shift key is currently held, so letters can be upper/lower case.
 static mut SHIFT_HELD: bool = false;
+/// Whether Caps Lock is enabled, affecting only alphabetic keys.
+static mut CAPS_LOCK_ON: bool = false;
 /// Whether a Ctrl key is currently held.
 static mut CTRL_HELD: bool = false;
 
@@ -28,6 +30,10 @@ pub enum Key {
     Enter,
     Backspace,
     Escape,
+    Home,
+    End,
+    PageUp,
+    PageDown,
     Up,
     Down,
     Left,
@@ -50,12 +56,12 @@ const SCANCODE_SET1: [u8; 0x3A] = [
     b'[', b']', // 0x1A-0x1B
     0, 0, // 0x1C (Enter), 0x1D (Ctrl)
     b'a', b's', b'd', b'f', b'g', b'h', b'j', b'k', b'l', // 0x1E-0x26
-    b';', b'\'', b'`', // 0x27-0x29
-    0,    // 0x2A (Left Shift)
+    b';', b'\'', b'`',  // 0x27-0x29
+    0,     // 0x2A (Left Shift)
     b'\\', // 0x2B
     b'z', b'x', b'c', b'v', b'b', b'n', b'm', // 0x2C-0x32
     b',', b'.', b'/', // 0x33-0x35
-    0, 0, 0, // 0x36 (Right Shift), 0x37 (KP*), 0x38 (Alt)
+    0, 0, 0,    // 0x36 (Right Shift), 0x37 (KP*), 0x38 (Alt)
     b' ', // 0x39 (Space)
 ];
 
@@ -87,8 +93,11 @@ fn wait_for_scancode() -> u8 {
     }
 }
 
-/// Translate a make code to an ASCII byte, applying the current Shift state.
-/// Returns `0` if the key has no printable character.
+/// Translate a make code to an ASCII byte using the current modifier state.
+///
+/// Letters honor both Shift and Caps Lock. Number-row and punctuation keys use
+/// the shifted ASCII symbol when Shift is held. Returns `0` if the key has no
+/// printable character.
 fn decode(scancode: u8) -> u8 {
     let index = scancode as usize;
     if index >= SCANCODE_SET1.len() {
@@ -98,12 +107,45 @@ fn decode(scancode: u8) -> u8 {
     if ascii == 0 {
         return 0;
     }
-    // SAFETY: plain read of a Copy static in a single-threaded kernel.
-    if unsafe { SHIFT_HELD } && ascii.is_ascii_lowercase() {
-        ascii - 32 // shift lowercase letter to uppercase
-    } else {
-        ascii
+    // SAFETY: plain reads of Copy statics in a single-threaded kernel.
+    let shift = unsafe { SHIFT_HELD };
+    let caps_lock = unsafe { CAPS_LOCK_ON };
+
+    if ascii.is_ascii_lowercase() {
+        if shift ^ caps_lock {
+            return ascii - 32;
+        }
+        return ascii;
     }
+
+    if shift {
+        return match ascii {
+            b'1' => b'!',
+            b'2' => b'@',
+            b'3' => b'#',
+            b'4' => b'$',
+            b'5' => b'%',
+            b'6' => b'^',
+            b'7' => b'&',
+            b'8' => b'*',
+            b'9' => b'(',
+            b'0' => b')',
+            b'-' => b'_',
+            b'=' => b'+',
+            b'[' => b'{',
+            b']' => b'}',
+            b'\\' => b'|',
+            b';' => b':',
+            b'\'' => b'"',
+            b'`' => b'~',
+            b',' => b'<',
+            b'.' => b'>',
+            b'/' => b'?',
+            _ => ascii,
+        };
+    }
+
+    ascii
 }
 
 /// Block until a meaningful key is pressed, then return it as a [`Key`].
@@ -119,26 +161,53 @@ pub fn read_key() -> Key {
         if code == 0xE0 {
             let extended = wait_for_scancode();
             match extended {
+                0x47 => return Key::Home,
+                0x4F => return Key::End,
+                0x49 => return Key::PageUp,
+                0x51 => return Key::PageDown,
                 0x48 => return Key::Up,
                 0x50 => return Key::Down,
                 0x4B => return Key::Left,
                 0x4D => return Key::Right,
                 0x53 => return Key::Delete,
                 // Right Ctrl make / break
-                0x1D => { unsafe { CTRL_HELD = true }; continue; }
-                0x9D => { unsafe { CTRL_HELD = false }; continue; }
+                0x1D => {
+                    unsafe { CTRL_HELD = true };
+                    continue;
+                }
+                0x9D => {
+                    unsafe { CTRL_HELD = false };
+                    continue;
+                }
                 _ => continue,
             }
         }
 
         // Update Shift and Ctrl state on press / release.
         match code {
-            0x2A | 0x36 => { unsafe { SHIFT_HELD = true }; continue; }
-            0xAA | 0xB6 => { unsafe { SHIFT_HELD = false }; continue; }
+            0x2A | 0x36 => {
+                unsafe { SHIFT_HELD = true };
+                continue;
+            }
+            0xAA | 0xB6 => {
+                unsafe { SHIFT_HELD = false };
+                continue;
+            }
+            // Caps Lock is a toggle, so only the make code matters here.
+            0x3A => {
+                unsafe { CAPS_LOCK_ON = !CAPS_LOCK_ON };
+                continue;
+            }
             // Left Ctrl make (0x1D) and break (0x9D) — must be before the
             // `& 0x80` break-code filter below since 0x9D has bit 7 set.
-            0x1D => { unsafe { CTRL_HELD = true }; continue; }
-            0x9D => { unsafe { CTRL_HELD = false }; continue; }
+            0x1D => {
+                unsafe { CTRL_HELD = true };
+                continue;
+            }
+            0x9D => {
+                unsafe { CTRL_HELD = false };
+                continue;
+            }
             _ => {}
         }
 
@@ -169,4 +238,10 @@ pub fn read_key() -> Key {
             }
         }
     }
+}
+
+/// Return whether Caps Lock is currently enabled.
+pub fn caps_lock_on() -> bool {
+    // SAFETY: plain read of a Copy static in a single-threaded kernel.
+    unsafe { CAPS_LOCK_ON }
 }

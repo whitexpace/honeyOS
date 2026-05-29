@@ -1,25 +1,33 @@
 //! In-memory file system for XSpace OS.
 //!
 //! XSpace OS has no disk driver yet, so this file system is *not* persistent:
-//! every file lives in kernel RAM and is lost on reboot. It is a teaching
-//! model of the four core file operations required by CMSC125:
+//! every file lives in kernel RAM and is lost on reboot. This module models a
+//! small indexed-allocation file system suitable for the course submission:
 //!
-//!   * create — register a new, empty named file
-//!   * save   — write (replace) the full contents of a file
-//!   * edit   — append more text onto an existing file
-//!   * delete — remove a file and free its slot
+//!   * each file owns one **index block**
+//!   * the index block points at up to four **data blocks**
+//!   * each block is 128 bytes
+//!   * file contents are reconstructed by reading the referenced data blocks in
+//!     index order
 //!
-//! To stay `no_std` and allocator-free, the file system is a fixed-size table
-//! of fixed-size files. All storage is statically sized — there is no heap.
-//! That keeps the implementation simple and the memory layout predictable,
-//! at the cost of hard capacity limits (see the constants below).
+//! The whole system stays `no_std` and allocator-free. Every table has fixed
+//! capacity, so both file metadata and block storage live in statically sized
+//! arrays.
 
 /// Maximum number of files the file system can hold at once.
 const MAX_FILES: usize = 8;
 /// Maximum length, in bytes, of a file name.
 const MAX_NAME_LEN: usize = 32;
+/// Number of bytes stored in one allocation block.
+pub const BLOCK_SIZE: usize = 128;
+/// Maximum number of data blocks that one file may own.
+pub const MAX_DATA_BLOCKS_PER_FILE: usize = 4;
 /// Maximum length, in bytes, of a file's contents.
-pub const MAX_CONTENT_LEN: usize = 512;
+pub const MAX_CONTENT_LEN: usize = BLOCK_SIZE * MAX_DATA_BLOCKS_PER_FILE;
+/// Total number of blocks in the simulated disk.
+pub const TOTAL_BLOCKS: usize = MAX_FILES * (1 + MAX_DATA_BLOCKS_PER_FILE);
+/// Sentinel used when a file/block reference slot is empty.
+const INVALID_BLOCK: usize = usize::MAX;
 
 /// Errors that a file system operation can return.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,15 +57,50 @@ impl FsError {
     }
 }
 
-/// A single file: a name and a body, each stored in a fixed-size buffer with
-/// an accompanying length so we know how much of the buffer is in use.
+/// Block role for the file allocation table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockKind {
+    Index,
+    Data,
+}
+
+/// Read-only block information exposed to the shell when drawing the file
+/// allocation table.
+#[derive(Debug, Clone, Copy)]
+pub struct BlockInfo<'a> {
+    pub used: bool,
+    pub kind: Option<BlockKind>,
+    pub owner: Option<&'a str>,
+}
+
+/// Internal metadata for one simulated disk block.
+#[derive(Clone, Copy)]
+struct BlockEntry {
+    used: bool,
+    owner_file: usize,
+    kind: BlockKind,
+}
+
+impl BlockEntry {
+    const FREE: BlockEntry = BlockEntry {
+        used: false,
+        owner_file: INVALID_BLOCK,
+        kind: BlockKind::Data,
+    };
+}
+
+/// A single file: a name plus the block references used by indexed
+/// allocation. Content bytes live in the global block pool, not inside the
+/// file metadata itself.
 struct File {
     /// Whether this table slot currently holds a live file.
     used: bool,
     name: [u8; MAX_NAME_LEN],
     name_len: usize,
-    content: [u8; MAX_CONTENT_LEN],
     content_len: usize,
+    index_block: usize,
+    data_blocks: [usize; MAX_DATA_BLOCKS_PER_FILE],
+    data_block_count: usize,
 }
 
 impl File {
@@ -67,21 +110,23 @@ impl File {
         used: false,
         name: [0; MAX_NAME_LEN],
         name_len: 0,
-        content: [0; MAX_CONTENT_LEN],
         content_len: 0,
+        index_block: INVALID_BLOCK,
+        data_blocks: [INVALID_BLOCK; MAX_DATA_BLOCKS_PER_FILE],
+        data_block_count: 0,
     };
 
     /// Does this live file have the given name?
     fn matches(&self, name: &str) -> bool {
-        self.used
-            && self.name_len == name.len()
-            && self.name[..self.name_len] == *name.as_bytes()
+        self.used && self.name_len == name.len() && self.name[..self.name_len] == *name.as_bytes()
     }
 }
 
 /// The file system: a fixed table of file slots living in kernel memory.
 pub struct FileSystem {
     files: [File; MAX_FILES],
+    blocks: [[u8; BLOCK_SIZE]; TOTAL_BLOCKS],
+    block_entries: [BlockEntry; TOTAL_BLOCKS],
 }
 
 impl FileSystem {
@@ -89,12 +134,57 @@ impl FileSystem {
     pub const fn new() -> FileSystem {
         FileSystem {
             files: [File::EMPTY; MAX_FILES],
+            blocks: [[0; BLOCK_SIZE]; TOTAL_BLOCKS],
+            block_entries: [BlockEntry::FREE; TOTAL_BLOCKS],
         }
     }
 
     /// Find the index of the live file with `name`, if any.
     fn find(&self, name: &str) -> Option<usize> {
         self.files.iter().position(|f| f.matches(name))
+    }
+
+    /// Count currently free blocks in the simulated disk.
+    fn free_block_count(&self) -> usize {
+        self.block_entries
+            .iter()
+            .filter(|entry| !entry.used)
+            .count()
+    }
+
+    /// Reserve one free block for a file and tag it with its purpose.
+    fn allocate_block(&mut self, file_idx: usize, kind: BlockKind) -> Option<usize> {
+        let block_idx = self.block_entries.iter().position(|entry| !entry.used)?;
+        self.block_entries[block_idx] = BlockEntry {
+            used: true,
+            owner_file: file_idx,
+            kind,
+        };
+        self.blocks[block_idx] = [0; BLOCK_SIZE];
+        Some(block_idx)
+    }
+
+    /// Release a block back to the free pool and erase its contents.
+    fn free_block(&mut self, block_idx: usize) {
+        if block_idx >= TOTAL_BLOCKS {
+            return;
+        }
+        self.blocks[block_idx] = [0; BLOCK_SIZE];
+        self.block_entries[block_idx] = BlockEntry::FREE;
+    }
+
+    /// Free all data blocks for one file while keeping its index block alive.
+    fn free_data_blocks(&mut self, file_idx: usize) {
+        let data_blocks = self.files[file_idx].data_blocks;
+        let data_count = self.files[file_idx].data_block_count;
+        for &block_idx in data_blocks.iter().take(data_count) {
+            if block_idx != INVALID_BLOCK {
+                self.free_block(block_idx);
+            }
+        }
+        self.files[file_idx].data_blocks = [INVALID_BLOCK; MAX_DATA_BLOCKS_PER_FILE];
+        self.files[file_idx].data_block_count = 0;
+        self.files[file_idx].content_len = 0;
     }
 
     /// CREATE: register a new, empty file.
@@ -113,12 +203,18 @@ impl FileSystem {
             .iter()
             .position(|f| !f.used)
             .ok_or(FsError::NoSpace)?;
+        let index_block = self
+            .allocate_block(idx, BlockKind::Index)
+            .ok_or(FsError::NoSpace)?;
 
         let file = &mut self.files[idx];
         file.used = true;
         file.name[..name.len()].copy_from_slice(name.as_bytes());
         file.name_len = name.len();
         file.content_len = 0;
+        file.index_block = index_block;
+        file.data_blocks = [INVALID_BLOCK; MAX_DATA_BLOCKS_PER_FILE];
+        file.data_block_count = 0;
         Ok(())
     }
 
@@ -130,8 +226,29 @@ impl FileSystem {
             return Err(FsError::ContentTooLong);
         }
         let idx = self.find(name).ok_or(FsError::NotFound)?;
+        let needed_blocks = data.len().div_ceil(BLOCK_SIZE);
+        let reusable_blocks = self.files[idx].data_block_count;
+        if self.free_block_count() + reusable_blocks < needed_blocks {
+            return Err(FsError::NoSpace);
+        }
+
+        self.free_data_blocks(idx);
+
+        let bytes = data.as_bytes();
+        let mut allocated_blocks = [INVALID_BLOCK; MAX_DATA_BLOCKS_PER_FILE];
+        for block_no in 0..needed_blocks {
+            let block_idx = self
+                .allocate_block(idx, BlockKind::Data)
+                .ok_or(FsError::NoSpace)?;
+            let start = block_no * BLOCK_SIZE;
+            let end = (start + BLOCK_SIZE).min(bytes.len());
+            self.blocks[block_idx][..end - start].copy_from_slice(&bytes[start..end]);
+            allocated_blocks[block_no] = block_idx;
+        }
+
         let file = &mut self.files[idx];
-        file.content[..data.len()].copy_from_slice(data.as_bytes());
+        file.data_blocks = allocated_blocks;
+        file.data_block_count = needed_blocks;
         file.content_len = data.len();
         Ok(())
     }
@@ -139,31 +256,50 @@ impl FileSystem {
     /// EDIT: append text to the end of an existing file's contents.
     ///
     /// Fails if the file does not exist or the result would be too large.
+    ///
+    /// The interactive editor now supports insertion anywhere in the file, so
+    /// this append-only helper is retained mainly as a course-level file
+    /// operation and for possible scripted tests.
+    #[allow(dead_code)]
     pub fn edit(&mut self, name: &str, extra: &str) -> Result<(), FsError> {
-        let idx = self.find(name).ok_or(FsError::NotFound)?;
-        let file = &mut self.files[idx];
-        let new_len = file.content_len + extra.len();
+        let mut content = [0u8; MAX_CONTENT_LEN];
+        let len = self.read_into(name, &mut content)?;
+        let new_len = len + extra.len();
         if new_len > MAX_CONTENT_LEN {
             return Err(FsError::ContentTooLong);
         }
-        file.content[file.content_len..new_len].copy_from_slice(extra.as_bytes());
-        file.content_len = new_len;
-        Ok(())
+        content[len..new_len].copy_from_slice(extra.as_bytes());
+        let new_text = core::str::from_utf8(&content[..new_len]).unwrap_or("");
+        self.save(name, new_text)
     }
 
     /// DELETE: remove a file and free its table slot.
     pub fn delete(&mut self, name: &str) -> Result<(), FsError> {
         let idx = self.find(name).ok_or(FsError::NotFound)?;
+        let index_block = self.files[idx].index_block;
+        self.free_data_blocks(idx);
+        if index_block != INVALID_BLOCK {
+            self.free_block(index_block);
+        }
         self.files[idx] = File::EMPTY;
         Ok(())
     }
 
-    /// Read back the contents of a file as a string slice.
-    pub fn read(&self, name: &str) -> Result<&str, FsError> {
+    /// Read back the contents of a file into a caller-provided buffer.
+    ///
+    /// This avoids heap allocation while still letting higher layers rebuild a
+    /// contiguous byte view of block-based file contents.
+    pub fn read_into(&self, name: &str, out: &mut [u8; MAX_CONTENT_LEN]) -> Result<usize, FsError> {
         let idx = self.find(name).ok_or(FsError::NotFound)?;
         let file = &self.files[idx];
-        // Contents only ever come from `&str` writes, so this is valid UTF-8.
-        Ok(core::str::from_utf8(&file.content[..file.content_len]).unwrap_or("<non-utf8>"))
+        let mut copied = 0usize;
+        for &block_idx in file.data_blocks.iter().take(file.data_block_count) {
+            let remaining = file.content_len - copied;
+            let chunk_len = remaining.min(BLOCK_SIZE);
+            out[copied..copied + chunk_len].copy_from_slice(&self.blocks[block_idx][..chunk_len]);
+            copied += chunk_len;
+        }
+        Ok(file.content_len)
     }
 
     /// Number of files currently stored.
@@ -198,6 +334,34 @@ impl FileSystem {
                 let name = core::str::from_utf8(&f.name[..f.name_len]).unwrap_or("<?>");
                 visit(name, f.content_len);
             }
+        }
+    }
+
+    /// Return one row of file-allocation-table data.
+    pub fn block_info(&self, block_idx: usize) -> BlockInfo<'_> {
+        if block_idx >= TOTAL_BLOCKS {
+            return BlockInfo {
+                used: false,
+                kind: None,
+                owner: None,
+            };
+        }
+
+        let entry = self.block_entries[block_idx];
+        if !entry.used {
+            return BlockInfo {
+                used: false,
+                kind: None,
+                owner: None,
+            };
+        }
+
+        let file = &self.files[entry.owner_file];
+        let owner = core::str::from_utf8(&file.name[..file.name_len]).unwrap_or("<?>");
+        BlockInfo {
+            used: true,
+            kind: Some(entry.kind),
+            owner: Some(owner),
         }
     }
 }

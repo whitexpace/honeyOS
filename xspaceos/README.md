@@ -5,8 +5,15 @@ uses a custom `x86_64` target, the `bootloader` crate, and QEMU to boot the
 kernel in a virtual machine.
 
 It includes a simple **in-memory file system** and an **interactive shell**:
-on boot you get a keyboard-driven menu for creating, saving, editing, viewing,
-and deleting text files.
+on boot you get a keyboard-driven desktop, a file manager, and a text editor
+for creating, saving, editing, renaming, viewing, and deleting text files.
+
+For file allocation, this version uses **indexed allocation** with:
+
+- `128`-byte blocks
+- `1` index block per file
+- up to `4` data blocks per file
+- a visible allocation-table screen for checking used and unused blocks
 
 ## Prerequisites
 
@@ -162,25 +169,62 @@ confirm that the build output is valid.
 
 ## Using the Shell
 
-When XSpace OS boots it shows the **File Manager** menu. It is driven entirely
-from the keyboard:
+When XSpace OS boots it shows a **Desktop** screen, where the `File Manager`
+app can be opened. The interface is driven entirely from the keyboard:
 
 | Key          | Action                                            |
 | ------------ | ------------------------------------------------- |
-| Up / Down    | Move the highlighted selection on the main menu.  |
+| Up / Down    | Move the highlighted selection in menus.          |
 | Enter        | Run the highlighted action.                       |
-| Any key      | Return to the menu from a result screen.          |
+| Esc          | Return from the file manager to the desktop.      |
 
-The menu offers five actions. Each one opens a prompt screen where you type a
-file name (and contents, where relevant) and press Enter:
+Inside the file manager and editor, the current workflow supports these tasks:
 
 1. **Create a file** — make a new, empty file.
-2. **Write / save a file** — replace a file's contents with what you type.
-3. **Edit a file** — append more text to the end of a file.
-4. **View a file** — print a file's contents to the screen.
-5. **Delete a file** — remove a file.
+2. **Open / view a file** — load a file into the editor.
+3. **Edit a file** — insert or delete text at the current cursor position.
+4. **Save a file** — write the current editor contents into the file system.
+5. **Rename a file** — change a file name from inside the editor.
+6. **Delete a file** — remove a file from the file manager.
+7. **Inspect allocation** — open the `Allocation Table` app from the desktop.
 
-The main menu always shows the current list of files and their sizes.
+The file manager always shows the current list of files and their sizes.
+
+### Editor controls
+
+The editor is not append-only. It supports a movable insertion cursor:
+
+| Key         | Action                                              |
+| ----------- | --------------------------------------------------- |
+| Left/Right  | Move the cursor one character backward or forward.  |
+| Up/Down     | Move the cursor vertically through wrapped lines.   |
+| Backspace   | Delete the character before the cursor.             |
+| Delete      | Delete the character at the cursor.                 |
+| Enter       | Insert a newline at the cursor.                     |
+| Ctrl+S      | Save the file.                                      |
+| Ctrl+R      | Rename the file.                                    |
+| Ctrl+X      | Close the editor.                                   |
+
+### Keyboard input details
+
+The keyboard layer now supports these text-entry behaviors:
+
+- `Shift` capitalizes letters
+- `Caps Lock` toggles alphabetic capitalization
+- `Shift` + number row produces symbols such as `!`, `@`, `#`, and `(`
+- `Shift` + punctuation produces symbols such as `_`, `+`, `{`, `}`, and `?`
+
+### Allocation table
+
+The desktop now includes an `Allocation Table` screen that displays the
+simulated disk blocks. Each row shows:
+
+- the block number
+- whether the block is `USED` or `FREE`
+- the block type: `IDX` for an index block or `DAT` for a data block
+- the owning file name when the block is allocated
+
+Use `Left` and `Right` on that screen to move between pages of block entries.
 
 ### How input works
 
@@ -201,10 +245,13 @@ and stays fully `no_std`. Because of this it has hard capacity limits:
 | Maximum files      | 8         |
 | Maximum name size  | 32 bytes  |
 | Maximum file size  | 512 bytes |
+| Block size         | 128 bytes |
+| Total blocks       | 40        |
 
 ### Operations
 
-The `FileSystem` type exposes the four required text-file operations:
+The `FileSystem` type exposes the core text-file operations and simulates
+indexed block allocation underneath them:
 
 | Operation | Method                       | Description                                  |
 | --------- | ---------------------------- | -------------------------------------------- |
@@ -212,6 +259,7 @@ The `FileSystem` type exposes the four required text-file operations:
 | Save      | `save(name, data)`           | Replace the full contents of a file.         |
 | Edit      | `edit(name, extra)`          | Append more text onto an existing file.      |
 | Delete    | `delete(name)`               | Remove a file and free its slot.             |
+| Rename    | `rename(old_name, new_name)` | Change a file name without changing content. |
 
 Supporting methods: `read(name)` returns a file's contents, `file_count()`
 returns how many files exist, and `for_each_file(...)` lists the directory.

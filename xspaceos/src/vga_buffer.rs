@@ -251,6 +251,26 @@ pub fn write_at(row: usize, col: usize, text: &str, foreground: Color, backgroun
     }
 }
 
+/// Draw a single byte at an exact (row, column) with the given colors.
+///
+/// Non-printable bytes are rendered as spaces so callers can safely use it for
+/// cursor cells and editor overlays.
+pub fn write_byte_at(row: usize, col: usize, byte: u8, foreground: Color, background: Color) {
+    if row >= BUFFER_HEIGHT || col >= BUFFER_WIDTH {
+        return;
+    }
+
+    let ascii = match byte {
+        0x20..=0x7e => byte,
+        _ => b' ',
+    };
+
+    vga_buffer().chars[row][col].write(ScreenChar {
+        ascii_character: ascii,
+        color_code: ColorCode::new(foreground, background),
+    });
+}
+
 /// Print formatted text to the VGA buffer (no trailing newline).
 #[macro_export]
 macro_rules! print {
