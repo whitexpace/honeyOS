@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>HoneyOs User Manual</title>
+  <title>honeyOS User Manual</title>
   <style>
 @page { size: A4; margin: 18mm 17mm 20mm; }
 body {
@@ -68,7 +68,7 @@ a { color: #075985; text-decoration: none; }
 </head>
 <body>
   <main>
-<h1 id="honeyos-user-manual">HoneyOs User Manual</h1>
+<h1 id="honeyos-user-manual">honeyOS User Manual</h1>
 <p><strong>By Whitexpace</strong></p>
 <p><strong>Members:</strong></p>
 <ul>
@@ -92,7 +92,7 @@ a { color: #075985; text-decoration: none; }
 </ul>
 <div class="pagebreak"></div>
 <h2 id="i-introduction-and-scope">I. Introduction and Scope</h2>
-<p>HoneyOs is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
+<p>honeyOS is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
 <p>This manual describes the features implemented in the current repository. The details were checked against <code>src/main.rs</code>, <code>src/shell.rs</code>, <code>src/keyboard.rs</code>, <code>src/fs.rs</code>, <code>.cargo/config.toml</code>, and <code>scripts/build-virtualbox-disk.sh</code>.</p>
 <p class="callout important">Important: the current file system is stored in RAM only. Files are lost when the virtual machine is restarted, reset, or powered off.</p>
 <h3 id="current-capabilities">Current Capabilities</h3>
@@ -169,11 +169,11 @@ cargo install bootimage</code></pre>
 <p>Manual QEMU command:</p>
 <pre><code class="language-sh">qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-honeyos.bin</code></pre>
 <h3 id="create-the-virtualbox-machine">Create the VirtualBox Machine</h3>
-<p>HoneyOs does not use an ISO installer. In VirtualBox, boot from the generated <code>honeyos.vdi</code> disk instead.</p>
+<p>honeyOS does not use an ISO installer. In VirtualBox, boot from the generated <code>honeyos.vdi</code> disk instead.</p>
 <ol>
 <li>Open VirtualBox.</li>
 <li>Click <code>New</code>.</li>
-<li>Use a VM name such as <code>HoneyOs</code>.</li>
+<li>Use a VM name such as <code>honeyOS</code>.</li>
 <li>Leave the ISO image field empty.</li>
 <li>Set <code>OS</code> to <code>Other</code>.</li>
 <li>Set <code>OS Version</code> to <code>Other/Unknown (64-bit)</code>.</li>
@@ -204,8 +204,8 @@ cargo install bootimage</code></pre>
 <figure><img src="images/attach-os-vdi.png" alt="VirtualBox storage settings with honeyos.vdi attached"></figure>
 <p class="caption">Caption: Attach the generated <code>honeyos.vdi</code> file as the VM&#x27;s hard disk.</p>
 <h3 id="boot-the-os">Boot the OS</h3>
-<p>Start the VM. A successful boot shows the HoneyOs desktop.</p>
-<figure><img src="images/desktop-view.png" alt="HoneyOs desktop after boot"></figure>
+<p>Start the VM. A successful boot shows the honeyOS desktop.</p>
+<figure><img src="images/desktop-view.png" alt="honeyOS desktop after boot"></figure>
 <p class="caption">Caption: The desktop shows the <code>File Manager</code> and <code>Allocation Table</code> apps.</p>
 <h2 id="iv-desktop-and-application-navigation">IV. Desktop and Application Navigation</h2>
 <h3 id="desktop-screen">Desktop Screen</h3>
@@ -446,7 +446,7 @@ cargo install bootimage</code></pre>
 </table>
 <p>The current file system has <code>40</code> simulated blocks, so the allocation table has two pages of <code>20</code> blocks each.</p>
 <h3 id="indexed-allocation-model">Indexed Allocation Model</h3>
-<p>HoneyOs currently uses a fixed-size, in-memory file system. It is designed for a small <code>no_std</code> kernel, so it does not require heap allocation.</p>
+<p>honeyOS currently uses a fixed-size, in-memory file system. It is designed for a small <code>no_std</code> kernel, so it does not require heap allocation.</p>
 <p>Storage model:</p>
 <ul>
 <li>files are kept in kernel RAM</li>
@@ -550,7 +550,7 @@ rustup component add rust-src llvm-tools-preview</code></pre>
 <p>Install QEMU tools, then verify:</p>
 <pre><code class="language-sh">qemu-img --version</code></pre>
 <h3 id="virtualbox-asks-for-an-iso">VirtualBox asks for an ISO</h3>
-<p>Do not select an ISO. HoneyOs boots from <code>honeyos.vdi</code>.</p>
+<p>Do not select an ISO. honeyOS boots from <code>honeyos.vdi</code>.</p>
 <p>Use this process:</p>
 <ol>
 <li>Create the VM without installation media.</li>
@@ -580,7 +580,7 @@ rustup component add rust-src llvm-tools-preview</code></pre>
 <li>Create a file named <code>notes.txt</code>.</li>
 <li>Type:</li>
 </ol>
-<pre><code class="language-text">HoneyOs demo file
+<pre><code class="language-text">honeyOS demo file
 Created inside the OS editor
 Files are currently RAM-only</code></pre>
 <ol>

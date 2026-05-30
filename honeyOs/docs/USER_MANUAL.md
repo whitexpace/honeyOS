@@ -1,4 +1,4 @@
-# HoneyOs User Manual
+# honeyOS User Manual
 
 **By Whitexpace**
 
@@ -27,7 +27,7 @@
 
 ## I. Introduction and Scope
 
-HoneyOs is a small Rust operating system kernel that boots directly in a
+honeyOS is a small Rust operating system kernel that boots directly in a
 virtual machine. It uses VGA text mode for screen output and a polled PS/2
 keyboard driver for input.
 
@@ -172,12 +172,12 @@ qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-
 
 ### Create the VirtualBox Machine
 
-HoneyOs does not use an ISO installer. In VirtualBox, boot from the generated
+honeyOS does not use an ISO installer. In VirtualBox, boot from the generated
 `honeyos.vdi` disk instead.
 
 1. Open VirtualBox.
 2. Click `New`.
-3. Use a VM name such as `HoneyOs`.
+3. Use a VM name such as `honeyOS`.
 4. Leave the ISO image field empty.
 5. Set `OS` to `Other`.
 6. Set `OS Version` to `Other/Unknown (64-bit)`.
@@ -221,9 +221,9 @@ Caption: Attach the generated `honeyos.vdi` file as the VM's hard disk.
 
 ### Boot the OS
 
-Start the VM. A successful boot shows the HoneyOs desktop.
+Start the VM. A successful boot shows the honeyOS desktop.
 
-![HoneyOs desktop after boot](images/desktop-view.png)
+![honeyOS desktop after boot](images/desktop-view.png)
 
 Caption: The desktop shows the `File Manager` and `Allocation Table` apps.
 
@@ -410,7 +410,7 @@ two pages of `20` blocks each.
 
 ### Indexed Allocation Model
 
-HoneyOs currently uses a fixed-size, in-memory file system. It is designed
+honeyOS currently uses a fixed-size, in-memory file system. It is designed
 for a small `no_std` kernel, so it does not require heap allocation.
 
 Storage model:
@@ -505,7 +505,7 @@ qemu-img --version
 
 ### VirtualBox asks for an ISO
 
-Do not select an ISO. HoneyOs boots from `honeyos.vdi`.
+Do not select an ISO. honeyOS boots from `honeyos.vdi`.
 
 Use this process:
 
@@ -544,7 +544,7 @@ Use this short flow for a clean demonstration:
 5. Type:
 
 ```text
-HoneyOs demo file
+honeyOS demo file
 Created inside the OS editor
 Files are currently RAM-only
 ```

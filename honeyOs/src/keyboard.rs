@@ -1,6 +1,6 @@
-//! Polled PS/2 keyboard driver for HoneyOs.
+//! Polled PS/2 keyboard driver for honeyOS.
 //!
-//! HoneyOs does not set up an interrupt descriptor table (IDT), so it cannot
+//! honeyOS does not set up an interrupt descriptor table (IDT), so it cannot
 //! use the usual interrupt-driven keyboard. Instead this driver *polls* the
 //! PS/2 controller: it repeatedly reads the status port until a byte is
 //! ready, then reads the scancode from the data port.

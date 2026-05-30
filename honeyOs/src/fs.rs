@@ -1,6 +1,6 @@
-//! In-memory file system for HoneyOs.
+//! In-memory file system for honeyOS.
 //!
-//! HoneyOs has no disk driver yet, so this file system is *not* persistent:
+//! honeyOS has no disk driver yet, so this file system is *not* persistent:
 //! every file lives in kernel RAM and is lost on reboot. This module models a
 //! small indexed-allocation file system suitable for the course submission:
 //!

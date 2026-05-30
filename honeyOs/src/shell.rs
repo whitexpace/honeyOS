@@ -1,4 +1,4 @@
-//! Interactive UI for HoneyOs.
+//! Interactive UI for honeyOS.
 //!
 //! Screen flow:
 //!   Desktop  →  File Manager  →  Editor
@@ -79,7 +79,7 @@ pub fn run(fs: &mut FileSystem) -> ! {
 fn draw_desktop(selected: usize) {
     vga_buffer::clear_screen();
 
-    vga_buffer::write_at(1, 2, "HoneyOs", Color::Yellow, Color::Black);
+    vga_buffer::write_at(1, 2, "honeyOS", Color::Yellow, Color::Black);
     vga_buffer::write_at(
         2,
         2,
@@ -160,7 +160,7 @@ fn draw_file_manager(fs: &FileSystem, selected: usize) {
     vga_buffer::write_at(
         0,
         2,
-        "HoneyOs  --  File Manager",
+        "honeyOS  --  File Manager",
         Color::Yellow,
         Color::Black,
     );
@@ -308,7 +308,7 @@ fn draw_allocation_table(fs: &FileSystem, page: usize) {
     vga_buffer::write_at(
         0,
         2,
-        "HoneyOs  --  Allocation Table",
+        "honeyOS  --  Allocation Table",
         Color::Yellow,
         Color::Black,
     );

@@ -1,6 +1,6 @@
-# HoneyOs
+# honeyOS
 
-HoneyOs is a small experimental operating system kernel written in Rust. It
+honeyOS is a small experimental operating system kernel written in Rust. It
 uses a custom `x86_64` target, the `bootloader` crate, and QEMU to boot the
 kernel in a virtual machine.
 
@@ -92,7 +92,7 @@ bootimage runner
 ```
 
 That runner starts QEMU with the generated boot image. When it boots correctly,
-you should see the HoneyOs File Manager menu in the QEMU window.
+you should see the honeyOS File Manager menu in the QEMU window.
 
 You can also run the image manually:
 
@@ -144,7 +144,7 @@ Use these settings when creating the VM:
 - System firmware: disable EFI and use legacy BIOS boot
 
 Then power on the VM. If the firmware cooperates with the bootloader, the VM
-should boot into the HoneyOs file manager.
+should boot into the honeyOS file manager.
 
 ### Compatibility Note
 
@@ -169,7 +169,7 @@ confirm that the build output is valid.
 
 ## Using the Shell
 
-When HoneyOs boots it shows a **Desktop** screen, where the `File Manager`
+When honeyOS boots it shows a **Desktop** screen, where the `File Manager`
 app can be opened. The interface is driven entirely from the keyboard:
 
 | Key          | Action                                            |
@@ -228,13 +228,13 @@ Use `Left` and `Right` on that screen to move between pages of block entries.
 
 ### How input works
 
-HoneyOs does not set up an interrupt descriptor table, so the keyboard is
+honeyOS does not set up an interrupt descriptor table, so the keyboard is
 read by **polling** the PS/2 controller (`src/keyboard.rs`) rather than via
 interrupts. Hardware interrupts are disabled at boot (`cli`) for this reason.
 
 ## File System
 
-HoneyOs has no disk driver yet, so the file system (`src/fs.rs`) keeps every
+honeyOS has no disk driver yet, so the file system (`src/fs.rs`) keeps every
 file in kernel RAM. It is **not persistent** — all files are lost on reboot.
 
 The file system is a fixed-size table of fixed-size files, so it needs no heap

@@ -7,7 +7,7 @@ This folder contains screenshots used by `docs/USER_MANUAL.md`.
 - `VM-Config-2.png` - memory, CPU, disk-size, and EFI settings.
 - `attach-os-vdi.png` - Storage settings with `honeyos.vdi` attached.
 
-## HoneyOs Screens
+## honeyOS Screens
 
 - `desktop-view.png` - desktop after boot.
 - `new-file.png` - file manager with `[ + New File ]` and a sample file.
