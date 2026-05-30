@@ -1,4 +1,4 @@
-//! HoneyOS — kernel entry point.
+//! HoneyOs — kernel entry point.
 //!
 //! This is a bare-metal Rust kernel (`no_std`, `no_main`): there is no
 //! operating system underneath it and no C runtime. Execution begins at
@@ -46,7 +46,7 @@ fn panic(info: &PanicInfo) -> ! {
 /// Kernel entry point. The bootloader transfers control here.
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    // Disable hardware interrupts. HoneyOS has no interrupt descriptor table,
+    // Disable hardware interrupts. HoneyOs has no interrupt descriptor table,
     // so any fired interrupt would fault the CPU. The keyboard is polled
     // instead (see `keyboard.rs`), so interrupts are not needed.
     //

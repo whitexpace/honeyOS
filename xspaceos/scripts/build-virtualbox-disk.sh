@@ -4,9 +4,9 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-TARGET_DIR="$PROJECT_DIR/target/x86_64-xspaceos/debug"
-RAW_IMAGE="$TARGET_DIR/bootimage-xspaceos.bin"
-VDI_IMAGE="$PROJECT_DIR/xspaceos.vdi"
+TARGET_DIR="$PROJECT_DIR/target/x86_64-honeyos/debug"
+RAW_IMAGE="$TARGET_DIR/bootimage-honeyos.bin"
+VDI_IMAGE="$PROJECT_DIR/honeyos.vdi"
 
 if ! command -v cargo >/dev/null 2>&1; then
   echo "error: cargo is not installed" >&2

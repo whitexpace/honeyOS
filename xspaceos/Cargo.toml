@@ -1,10 +1,10 @@
 # [[bin]]
-# name = "xpaceos"
+# name = "honeyos"
 # test = false
 # bench = false
 
 [package]
-name = "xspaceos"
+name = "honeyos"
 version = "0.1.0"
 edition = "2024"
 

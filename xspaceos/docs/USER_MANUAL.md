@@ -1,4 +1,4 @@
-# HoneyOS User Manual
+# HoneyOs User Manual
 
 **By Whitexpace**
 
@@ -27,7 +27,7 @@
 
 ## I. Introduction and Scope
 
-HoneyOS is a small Rust operating system kernel that boots directly in a
+HoneyOs is a small Rust operating system kernel that boots directly in a
 virtual machine. It uses VGA text mode for screen output and a polled PS/2
 keyboard driver for input.
 
@@ -134,7 +134,7 @@ cargo bootimage
 The raw image is created at:
 
 ```text
-target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
 ### Build the VirtualBox Disk
@@ -148,7 +148,7 @@ To create the VirtualBox disk image, use the helper script:
 The script runs `cargo bootimage`, then converts the raw image into:
 
 ```text
-xspaceos.vdi
+honeyos.vdi
 ```
 
 ### Run with QEMU
@@ -167,17 +167,17 @@ generated boot image.
 Manual QEMU command:
 
 ```sh
-qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
 ### Create the VirtualBox Machine
 
-HoneyOS does not use an ISO installer. In VirtualBox, boot from the generated
-`xspaceos.vdi` disk instead.
+HoneyOs does not use an ISO installer. In VirtualBox, boot from the generated
+`honeyos.vdi` disk instead.
 
 1. Open VirtualBox.
 2. Click `New`.
-3. Use a VM name such as `HoneyOS`.
+3. Use a VM name such as `HoneyOs`.
 4. Leave the ISO image field empty.
 5. Set `OS` to `Other`.
 6. Set `OS Version` to `Other/Unknown (64-bit)`.
@@ -201,10 +201,10 @@ Caption: Keep `Use EFI` unchecked. The current boot image expects legacy BIOS
 boot.
 
 VirtualBox may ask for a virtual hard disk size during VM creation. It is fine
-to finish the wizard, because the generated `xspaceos.vdi` will be attached in
+to finish the wizard, because the generated `honeyos.vdi` will be attached in
 the next step.
 
-### Attach `xspaceos.vdi`
+### Attach `honeyos.vdi`
 
 After building the VDI with `./scripts/build-virtualbox-disk.sh`:
 
@@ -212,18 +212,18 @@ After building the VDI with `./scripts/build-virtualbox-disk.sh`:
 2. Open `Settings`.
 3. Open `Storage`.
 4. Remove any temporary blank disk if VirtualBox created one.
-5. Attach `xspaceos.vdi` as the VM hard disk.
+5. Attach `honeyos.vdi` as the VM hard disk.
 6. Save the settings.
 
-![VirtualBox storage settings with xspaceos.vdi attached](images/attach-os-vdi.png)
+![VirtualBox storage settings with honeyos.vdi attached](images/attach-os-vdi.png)
 
-Caption: Attach the generated `xspaceos.vdi` file as the VM's hard disk.
+Caption: Attach the generated `honeyos.vdi` file as the VM's hard disk.
 
 ### Boot the OS
 
-Start the VM. A successful boot shows the HoneyOS desktop.
+Start the VM. A successful boot shows the HoneyOs desktop.
 
-![HoneyOS desktop after boot](images/desktop-view.png)
+![HoneyOs desktop after boot](images/desktop-view.png)
 
 Caption: The desktop shows the `File Manager` and `Allocation Table` apps.
 
@@ -410,7 +410,7 @@ two pages of `20` blocks each.
 
 ### Indexed Allocation Model
 
-HoneyOS currently uses a fixed-size, in-memory file system. It is designed
+HoneyOs currently uses a fixed-size, in-memory file system. It is designed
 for a small `no_std` kernel, so it does not require heap allocation.
 
 Storage model:
@@ -505,20 +505,20 @@ qemu-img --version
 
 ### VirtualBox asks for an ISO
 
-Do not select an ISO. HoneyOS boots from `xspaceos.vdi`.
+Do not select an ISO. HoneyOs boots from `honeyos.vdi`.
 
 Use this process:
 
 1. Create the VM without installation media.
 2. Finish the VM wizard.
 3. Open `Settings > Storage`.
-4. Attach `xspaceos.vdi` as the hard disk.
+4. Attach `honeyos.vdi` as the hard disk.
 
 ### VirtualBox does not boot the OS
 
 Check the following:
 
-- `xspaceos.vdi` exists in the project root
+- `honeyos.vdi` exists in the project root
 - the VDI was rebuilt after the latest code changes
 - the VDI is attached as the VM hard disk
 - EFI is disabled
@@ -544,7 +544,7 @@ Use this short flow for a clean demonstration:
 5. Type:
 
 ```text
-HoneyOS demo file
+HoneyOs demo file
 Created inside the OS editor
 Files are currently RAM-only
 ```

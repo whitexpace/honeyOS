@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the HoneyOS user manual as styled HTML and PDF.
+"""Build the HoneyOs user manual as styled HTML and PDF.
 
 No Pandoc, LaTeX, or Markdown package is required. The script implements the
 small Markdown subset used by docs/USER_MANUAL.md and writes a self-contained
@@ -18,8 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANUAL_MD = ROOT / "docs" / "USER_MANUAL.md"
-MANUAL_HTML = ROOT / "docs" / "HoneyOS-User-Manual.html"
-MANUAL_PDF = ROOT / "docs" / "HoneyOS-User-Manual.pdf"
+MANUAL_HTML = ROOT / "docs" / "HoneyOs-User-Manual.html"
+MANUAL_PDF = ROOT / "docs" / "HoneyOs-User-Manual.pdf"
 
 PAGE_W = 595.28
 PAGE_H = 841.89
@@ -33,7 +33,7 @@ CODE_PAD_Y = 1.1
 
 # Pixel crop rectangles, measured from the top-left of the source screenshot.
 # The source screenshots are full-desktop captures; these crops keep the PDF
-# focused on the relevant VirtualBox dialog or HoneyOS screen.
+# focused on the relevant VirtualBox dialog or HoneyOs screen.
 IMAGE_CROPS: dict[str, tuple[int, int, int, int]] = {
     "images/VM-Config-2.png": (555, 340, 810, 400),
     "images/attach-os-vdi.png": (535, 292, 850, 498),
@@ -347,7 +347,7 @@ def write_html(blocks: list[Block]) -> None:
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>HoneyOS User Manual</title>
+  <title>HoneyOs User Manual</title>
   <style>{HTML_CSS}</style>
 </head>
 <body>
@@ -778,7 +778,7 @@ class ManualPdf:
             if len(self.pages) == 1 and len(self.page.ops) == 1:
                 self.title_mode = True
                 self.y = PAGE_H - 230
-                self.centered_text(self.y, "HoneyOS", "F2", 34, fill=(0.07, 0.21, 0.36))
+                self.centered_text(self.y, "HoneyOs", "F2", 34, fill=(0.07, 0.21, 0.36))
                 self.y -= 42
                 self.centered_text(self.y, "User Manual", "F1", 23, fill=(0.03, 0.50, 0.55))
                 self.y -= 22
@@ -970,7 +970,7 @@ class ManualPdf:
                 continue
             self.page = page
             self.line(MARGIN_L, 32, MARGIN_L + CONTENT_W, 32, (0.82, 0.86, 0.90), 0.6)
-            self.text(MARGIN_L, 20, "HoneyOS User Manual", "F1", 8.2, fill=(0.42, 0.49, 0.57))
+            self.text(MARGIN_L, 20, "HoneyOs User Manual", "F1", 8.2, fill=(0.42, 0.49, 0.57))
             page_label = f"Page {idx} of {total}"
             self.text(
                 MARGIN_L + CONTENT_W - text_width(page_label, "F1", 8.2),

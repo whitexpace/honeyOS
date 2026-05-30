@@ -1,6 +1,6 @@
-# HoneyOS
+# HoneyOs
 
-HoneyOS is a small experimental operating system kernel written in Rust. It
+HoneyOs is a small experimental operating system kernel written in Rust. It
 uses a custom `x86_64` target, the `bootloader` crate, and QEMU to boot the
 kernel in a virtual machine.
 
@@ -62,7 +62,7 @@ cargo build
 This uses `.cargo/config.toml`, which points Cargo at the custom target file:
 
 ```text
-x86_64-xspaceos.json
+x86_64-honeyos.json
 ```
 
 ## Create a Bootable Image
@@ -74,7 +74,7 @@ cargo bootimage
 The generated disk image is written to:
 
 ```text
-target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
 ## Run in QEMU
@@ -92,12 +92,12 @@ bootimage runner
 ```
 
 That runner starts QEMU with the generated boot image. When it boots correctly,
-you should see the HoneyOS File Manager menu in the QEMU window.
+you should see the HoneyOs File Manager menu in the QEMU window.
 
 You can also run the image manually:
 
 ```sh
-qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
 ## Run in VirtualBox
@@ -106,7 +106,7 @@ This project does not produce an installer ISO. Instead, it builds a bootable
 raw disk image:
 
 ```text
-target/x86_64-xspaceos/debug/bootimage-xspaceos.bin
+target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
 QEMU can boot that raw image directly. VirtualBox is easier to use if you
@@ -123,15 +123,15 @@ This repository includes a helper script:
 The script:
 
 1. runs `cargo bootimage`
-2. reads `target/x86_64-xspaceos/debug/bootimage-xspaceos.bin`
-3. converts it to `xspaceos.vdi` using `qemu-img`
+2. reads `target/x86_64-honeyos/debug/bootimage-honeyos.bin`
+3. converts it to `honeyos.vdi` using `qemu-img`
 
 If you prefer the manual conversion step:
 
 ```sh
 qemu-img convert -f raw -O vdi \
-  target/x86_64-xspaceos/debug/bootimage-xspaceos.bin \
-  xspaceos.vdi
+  target/x86_64-honeyos/debug/bootimage-honeyos.bin \
+  honeyos.vdi
 ```
 
 ### Boot in VirtualBox
@@ -140,11 +140,11 @@ Use these settings when creating the VM:
 
 - Type: `Other` or `Unknown`
 - Version: `Other/Unknown (64-bit)` or the closest `x86_64` option
-- Hard disk: use `xspaceos.vdi`
+- Hard disk: use `honeyos.vdi`
 - System firmware: disable EFI and use legacy BIOS boot
 
 Then power on the VM. If the firmware cooperates with the bootloader, the VM
-should boot into the HoneyOS file manager.
+should boot into the HoneyOs file manager.
 
 ### Compatibility Note
 
@@ -164,12 +164,12 @@ confirm that the build output is valid.
 ├── src/keyboard.rs          # Polled PS/2 keyboard driver (keyboard input)
 ├── src/fs.rs                # In-memory file system
 ├── src/shell.rs             # Interactive menu-driven shell
-└── x86_64-xspaceos.json     # Custom bare-metal x86_64 target
+└── x86_64-honeyos.json     # Custom bare-metal x86_64 target
 ```
 
 ## Using the Shell
 
-When HoneyOS boots it shows a **Desktop** screen, where the `File Manager`
+When HoneyOs boots it shows a **Desktop** screen, where the `File Manager`
 app can be opened. The interface is driven entirely from the keyboard:
 
 | Key          | Action                                            |
@@ -228,13 +228,13 @@ Use `Left` and `Right` on that screen to move between pages of block entries.
 
 ### How input works
 
-HoneyOS does not set up an interrupt descriptor table, so the keyboard is
+HoneyOs does not set up an interrupt descriptor table, so the keyboard is
 read by **polling** the PS/2 controller (`src/keyboard.rs`) rather than via
 interrupts. Hardware interrupts are disabled at boot (`cli`) for this reason.
 
 ## File System
 
-HoneyOS has no disk driver yet, so the file system (`src/fs.rs`) keeps every
+HoneyOs has no disk driver yet, so the file system (`src/fs.rs`) keeps every
 file in kernel RAM. It is **not persistent** — all files are lost on reboot.
 
 The file system is a fixed-size table of fixed-size files, so it needs no heap
