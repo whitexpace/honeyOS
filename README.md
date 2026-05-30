@@ -65,7 +65,7 @@ QEMU. If this command fails, make sure both `bootimage` and QEMU are installed.
 ├── .cargo/config.toml        # Cargo build settings for the custom target
 ├── Cargo.toml                # Rust package manifest and dependencies
 ├── src/main.rs               # Kernel entry point
-└── x86_64-Honeyos.json      # Custom bare-metal x86_64 target
+└── x86_64-honeyos.json      # Custom bare-metal x86_64 target
 ```
 
 ## Notes
