@@ -1,7 +1,7 @@
-# XSpace OS
+# Honey OS
 
-XSpace OS is a small experimental operating system kernel written in Rust. It
-currently boots with the `bootloader` crate and writes `XSpace OS` directly to
+Honey OS is a small experimental operating system kernel written in Rust. It
+currently boots with the `bootloader` crate and writes `Honey OS` directly to
 the VGA text buffer.
 
 ## Requirements
@@ -38,7 +38,7 @@ cargo install bootimage
 ```
 
 This project uses `.cargo/config.toml` to build with the custom
-`x86_64-xspaceos.json` target by default.
+`x86_64-Honeyos.json` target by default.
 
 ## Build
 
@@ -65,7 +65,7 @@ QEMU. If this command fails, make sure both `bootimage` and QEMU are installed.
 ├── .cargo/config.toml        # Cargo build settings for the custom target
 ├── Cargo.toml                # Rust package manifest and dependencies
 ├── src/main.rs               # Kernel entry point
-└── x86_64-xspaceos.json      # Custom bare-metal x86_64 target
+└── x86_64-Honeyos.json      # Custom bare-metal x86_64 target
 ```
 
 ## Notes
