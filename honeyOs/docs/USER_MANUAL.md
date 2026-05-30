@@ -38,6 +38,19 @@ details were checked against `src/main.rs`, `src/shell.rs`, `src/keyboard.rs`,
 Important: the current file system is stored in RAM only. Files are lost when
 the virtual machine is restarted, reset, or powered off.
 
+### Two Ways to Run honeyOS
+
+honeyOS can be run in two supported ways:
+
+| Method | Use this when | Main requirement |
+| --- | --- | --- |
+| Source code with QEMU | You want to build and boot the OS from the repository source. | Rust nightly setup, `bootimage`, and QEMU. |
+| Ready-made VDI with VirtualBox | You already have `honeyos.vdi` and only want to boot the OS. | VirtualBox and the `honeyos.vdi` disk file. |
+
+The source-code path uses `cargo run`, which builds the kernel and starts QEMU
+through the configured `bootimage runner`. The VDI path does not rebuild the
+source code; it boots the existing `honeyos.vdi` file as a VirtualBox hard disk.
+
 ### Current Capabilities
 
 The current build includes:
@@ -68,21 +81,35 @@ The current build does not include:
 
 ### Host Tools
 
-Install these tools on the host computer before building the OS:
+The required host tools depend on the run method.
+
+For the source-code QEMU path, install:
 
 - Rust and Cargo through `rustup`
 - a nightly Rust toolchain
 - the `rust-src` component
 - the `llvm-tools-preview` component
 - `bootimage`
-- QEMU tools
-- VirtualBox, if the generated VDI will be run in VirtualBox
+- QEMU
 
-Check the installed tools with:
+For the ready-made VDI path, install:
+
+- VirtualBox
+
+If the `honeyos.vdi` file must be rebuilt from source, the source-code tools
+are also required, plus `qemu-img` from QEMU tools.
+
+Check the source-code tools with:
 
 ```sh
 rustup --version
 cargo --version
+qemu-system-x86_64 --version
+```
+
+Check the optional VDI tools with:
+
+```sh
 qemu-img --version
 VBoxManage --version
 ```
@@ -117,15 +144,38 @@ being used.
 
 ## III. Build and Boot Procedures
 
-### Build the Kernel
+### Choose a Run Path
 
-To compile the kernel:
+honeyOS does not use an ISO installer. Use one of these two run paths:
+
+- run from source code with QEMU
+- run the existing `honeyos.vdi` file with VirtualBox
+
+### Path A: Run from Source Code with QEMU
+
+Use this path when working from the repository source. This path requires the
+Rust setup from [II. Requirements and Project Setup](#ii-requirements-and-project-setup),
+`bootimage`, and QEMU.
+
+From the project root, run:
+
+```sh
+cargo run
+```
+
+Cargo uses `.cargo/config.toml`, which points to the custom
+`x86_64-honeyos.json` target and the configured `bootimage runner`. The runner
+starts QEMU with the generated boot image.
+
+QEMU is the reference environment for this project.
+
+To compile without booting:
 
 ```sh
 cargo build
 ```
 
-To create the bootable raw disk image:
+To create only the bootable raw disk image:
 
 ```sh
 cargo bootimage
@@ -137,43 +187,50 @@ The raw image is created at:
 target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
-### Build the VirtualBox Disk
-
-To create the VirtualBox disk image, use the helper script:
-
-```sh
-./scripts/build-virtualbox-disk.sh
-```
-
-The script runs `cargo bootimage`, then converts the raw image into:
-
-```text
-honeyos.vdi
-```
-
-### Run with QEMU
-
-QEMU is the reference environment for this project.
-
-From the project root, run:
-
-```sh
-cargo run
-```
-
-Cargo uses the configured `bootimage runner`, which starts QEMU with the
-generated boot image.
-
 Manual QEMU command:
 
 ```sh
 qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-honeyos.bin
 ```
 
+### Optional: Build or Rebuild the VirtualBox Disk
+
+This step is needed only when `honeyos.vdi` is missing or must be regenerated
+from the current source code. It is not needed when a ready-made `honeyos.vdi`
+file is already available.
+
+To create the VirtualBox disk image from source, use the helper script:
+
+```sh
+./scripts/build-virtualbox-disk.sh
+```
+
+The script runs `cargo bootimage`, reads:
+
+```text
+target/x86_64-honeyos/debug/bootimage-honeyos.bin
+```
+
+and converts it into:
+
+```text
+honeyos.vdi
+```
+
+The script requires `qemu-img`. It also requires the same Rust and `bootimage`
+setup used by the source-code QEMU path.
+
+### Path B: Run the Ready-Made VDI with VirtualBox
+
+Use this path when the `honeyos.vdi` file already exists and the OS does not
+need to be rebuilt from source. This path requires VirtualBox and the
+`honeyos.vdi` disk file. It does not require Rust, Cargo, `bootimage`, QEMU, or
+`qemu-img` unless the VDI needs to be rebuilt.
+
 ### Create the VirtualBox Machine
 
-honeyOS does not use an ISO installer. In VirtualBox, boot from the generated
-`honeyos.vdi` disk instead.
+In VirtualBox, boot from `honeyos.vdi` as a hard disk. Do not select an ISO
+image.
 
 1. Open VirtualBox.
 2. Click `New`.
@@ -201,12 +258,11 @@ Caption: Keep `Use EFI` unchecked. The current boot image expects legacy BIOS
 boot.
 
 VirtualBox may ask for a virtual hard disk size during VM creation. It is fine
-to finish the wizard, because the generated `honeyos.vdi` will be attached in
-the next step.
+to finish the wizard, because `honeyos.vdi` will be attached in the next step.
 
 ### Attach `honeyos.vdi`
 
-After building the VDI with `./scripts/build-virtualbox-disk.sh`:
+After obtaining `honeyos.vdi`:
 
 1. Select the VM in VirtualBox.
 2. Open `Settings`.
@@ -217,9 +273,9 @@ After building the VDI with `./scripts/build-virtualbox-disk.sh`:
 
 ![VirtualBox storage settings with honeyos.vdi attached](images/attach-os-vdi.png)
 
-Caption: Attach the generated `honeyos.vdi` file as the VM's hard disk.
+Caption: Attach the `honeyos.vdi` file as the VM's hard disk.
 
-### Boot the OS
+### Boot the OS in VirtualBox
 
 Start the VM. A successful boot shows the honeyOS desktop.
 
@@ -535,13 +591,11 @@ only and does not write user files to the VDI.
 
 ## IX. Demonstration Flow
 
-Use this short flow for a clean demonstration:
+Use this short flow for a clean demonstration. First boot honeyOS by using one of the two run paths: run `cargo run` for the source-code QEMU path, or start the VirtualBox VM that has `honeyos.vdi` attached.
 
-1. Build the VDI with `./scripts/build-virtualbox-disk.sh`.
-2. Start the VirtualBox VM.
-3. Open `File Manager`.
-4. Create a file named `notes.txt`.
-5. Type:
+1. Open `File Manager`.
+2. Create a file named `notes.txt`.
+3. Type:
 
 ```text
 honeyOS demo file
@@ -549,13 +603,13 @@ Created inside the OS editor
 Files are currently RAM-only
 ```
 
-6. Press `Ctrl+S` to save.
-7. Press `Ctrl+R` and rename the file to `manual.txt`.
-8. Press `Ctrl+X` to return to the file manager.
-9. Confirm the renamed file appears with its byte count.
-10. Press `Esc` to return to the desktop.
-11. Open `Allocation Table`.
-12. Show the `IDX` block and `DAT` block entries for the file.
+4. Press `Ctrl+S` to save.
+5. Press `Ctrl+R` and rename the file to `manual.txt`.
+6. Press `Ctrl+X` to return to the file manager.
+7. Confirm the renamed file appears with its byte count.
+8. Press `Esc` to return to the desktop.
+9. Open `Allocation Table`.
+10. Show the `IDX` block and `DAT` block entries for the file.
 
 This demonstrates booting, file management, editing, saving, renaming, and
 indexed allocation inspection.

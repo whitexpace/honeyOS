@@ -95,6 +95,30 @@ a { color: #075985; text-decoration: none; }
 <p>honeyOS is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
 <p>This manual describes the features implemented in the current repository. The details were checked against <code>src/main.rs</code>, <code>src/shell.rs</code>, <code>src/keyboard.rs</code>, <code>src/fs.rs</code>, <code>.cargo/config.toml</code>, and <code>scripts/build-virtualbox-disk.sh</code>.</p>
 <p class="callout important">Important: the current file system is stored in RAM only. Files are lost when the virtual machine is restarted, reset, or powered off.</p>
+<h3 id="two-ways-to-run-honeyos">Two Ways to Run honeyOS</h3>
+<p>honeyOS can be run in two supported ways:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Use this when</th>
+<th>Main requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source code with QEMU</td>
+<td>You want to build and boot the OS from the repository source.</td>
+<td>Rust nightly setup, <code>bootimage</code>, and QEMU.</td>
+</tr>
+<tr>
+<td>Ready-made VDI with VirtualBox</td>
+<td>You already have <code>honeyos.vdi</code> and only want to boot the OS.</td>
+<td>VirtualBox and the <code>honeyos.vdi</code> disk file.</td>
+</tr>
+</tbody>
+</table>
+<p>The source-code path uses <code>cargo run</code>, which builds the kernel and starts QEMU through the configured <code>bootimage runner</code>. The VDI path does not rebuild the source code; it boots the existing <code>honeyos.vdi</code> file as a VirtualBox hard disk.</p>
 <h3 id="current-capabilities">Current Capabilities</h3>
 <p>The current build includes:</p>
 <ul>
@@ -121,20 +145,27 @@ a { color: #075985; text-decoration: none; }
 </ul>
 <h2 id="ii-requirements-and-project-setup">II. Requirements and Project Setup</h2>
 <h3 id="host-tools">Host Tools</h3>
-<p>Install these tools on the host computer before building the OS:</p>
+<p>The required host tools depend on the run method.</p>
+<p>For the source-code QEMU path, install:</p>
 <ul>
 <li>Rust and Cargo through <code>rustup</code></li>
 <li>a nightly Rust toolchain</li>
 <li>the <code>rust-src</code> component</li>
 <li>the <code>llvm-tools-preview</code> component</li>
 <li><code>bootimage</code></li>
-<li>QEMU tools</li>
-<li>VirtualBox, if the generated VDI will be run in VirtualBox</li>
+<li>QEMU</li>
 </ul>
-<p>Check the installed tools with:</p>
+<p>For the ready-made VDI path, install:</p>
+<ul>
+<li>VirtualBox</li>
+</ul>
+<p>If the <code>honeyos.vdi</code> file must be rebuilt from source, the source-code tools are also required, plus <code>qemu-img</code> from QEMU tools.</p>
+<p>Check the source-code tools with:</p>
 <pre><code class="language-sh">rustup --version
 cargo --version
-qemu-img --version
+qemu-system-x86_64 --version</code></pre>
+<p>Check the optional VDI tools with:</p>
+<pre><code class="language-sh">qemu-img --version
 VBoxManage --version</code></pre>
 <h3 id="rust-toolchain-setup">Rust Toolchain Setup</h3>
 <p>Run this setup once from the project root:</p>
@@ -149,27 +180,39 @@ cargo install bootimage</code></pre>
 <pre><code class="language-sh">cd path/to/project-root</code></pre>
 <p>Replace <code>path/to/project-root</code> with the actual project location on the computer being used.</p>
 <h2 id="iii-build-and-boot-procedures">III. Build and Boot Procedures</h2>
-<h3 id="build-the-kernel">Build the Kernel</h3>
-<p>To compile the kernel:</p>
+<h3 id="choose-a-run-path">Choose a Run Path</h3>
+<p>honeyOS does not use an ISO installer. Use one of these two run paths:</p>
+<ul>
+<li>run from source code with QEMU</li>
+<li>run the existing <code>honeyos.vdi</code> file with VirtualBox</li>
+</ul>
+<h3 id="path-a-run-from-source-code-with-qemu">Path A: Run from Source Code with QEMU</h3>
+<p>Use this path when working from the repository source. This path requires the Rust setup from <a href=\"#ii-requirements-and-project-setup\">II. Requirements and Project Setup</a>, <code>bootimage</code>, and QEMU.</p>
+<p>From the project root, run:</p>
+<pre><code class="language-sh">cargo run</code></pre>
+<p>Cargo uses <code>.cargo/config.toml</code>, which points to the custom <code>x86_64-honeyos.json</code> target and the configured <code>bootimage runner</code>. The runner starts QEMU with the generated boot image.</p>
+<p>QEMU is the reference environment for this project.</p>
+<p>To compile without booting:</p>
 <pre><code class="language-sh">cargo build</code></pre>
-<p>To create the bootable raw disk image:</p>
+<p>To create only the bootable raw disk image:</p>
 <pre><code class="language-sh">cargo bootimage</code></pre>
 <p>The raw image is created at:</p>
 <pre><code class="language-text">target/x86_64-honeyos/debug/bootimage-honeyos.bin</code></pre>
-<h3 id="build-the-virtualbox-disk">Build the VirtualBox Disk</h3>
-<p>To create the VirtualBox disk image, use the helper script:</p>
-<pre><code class="language-sh">./scripts/build-virtualbox-disk.sh</code></pre>
-<p>The script runs <code>cargo bootimage</code>, then converts the raw image into:</p>
-<pre><code class="language-text">honeyos.vdi</code></pre>
-<h3 id="run-with-qemu">Run with QEMU</h3>
-<p>QEMU is the reference environment for this project.</p>
-<p>From the project root, run:</p>
-<pre><code class="language-sh">cargo run</code></pre>
-<p>Cargo uses the configured <code>bootimage runner</code>, which starts QEMU with the generated boot image.</p>
 <p>Manual QEMU command:</p>
 <pre><code class="language-sh">qemu-system-x86_64 -drive format=raw,file=target/x86_64-honeyos/debug/bootimage-honeyos.bin</code></pre>
+<h3 id="optional-build-or-rebuild-the-virtualbox-disk">Optional: Build or Rebuild the VirtualBox Disk</h3>
+<p>This step is needed only when <code>honeyos.vdi</code> is missing or must be regenerated from the current source code. It is not needed when a ready-made <code>honeyos.vdi</code> file is already available.</p>
+<p>To create the VirtualBox disk image from source, use the helper script:</p>
+<pre><code class="language-sh">./scripts/build-virtualbox-disk.sh</code></pre>
+<p>The script runs <code>cargo bootimage</code>, reads:</p>
+<pre><code class="language-text">target/x86_64-honeyos/debug/bootimage-honeyos.bin</code></pre>
+<p>and converts it into:</p>
+<pre><code class="language-text">honeyos.vdi</code></pre>
+<p>The script requires <code>qemu-img</code>. It also requires the same Rust and <code>bootimage</code> setup used by the source-code QEMU path.</p>
+<h3 id="path-b-run-the-ready-made-vdi-with-virtualbox">Path B: Run the Ready-Made VDI with VirtualBox</h3>
+<p>Use this path when the <code>honeyos.vdi</code> file already exists and the OS does not need to be rebuilt from source. This path requires VirtualBox and the <code>honeyos.vdi</code> disk file. It does not require Rust, Cargo, <code>bootimage</code>, QEMU, or <code>qemu-img</code> unless the VDI needs to be rebuilt.</p>
 <h3 id="create-the-virtualbox-machine">Create the VirtualBox Machine</h3>
-<p>honeyOS does not use an ISO installer. In VirtualBox, boot from the generated <code>honeyos.vdi</code> disk instead.</p>
+<p>In VirtualBox, boot from <code>honeyos.vdi</code> as a hard disk. Do not select an ISO image.</p>
 <ol>
 <li>Open VirtualBox.</li>
 <li>Click <code>New</code>.</li>
@@ -190,9 +233,9 @@ cargo install bootimage</code></pre>
 </ul>
 <figure><img src="images/VM-Config-2.png" alt="VirtualBox memory, CPU, disk, and EFI settings"></figure>
 <p class="caption">Caption: Keep <code>Use EFI</code> unchecked. The current boot image expects legacy BIOS boot.</p>
-<p>VirtualBox may ask for a virtual hard disk size during VM creation. It is fine to finish the wizard, because the generated <code>honeyos.vdi</code> will be attached in the next step.</p>
+<p>VirtualBox may ask for a virtual hard disk size during VM creation. It is fine to finish the wizard, because <code>honeyos.vdi</code> will be attached in the next step.</p>
 <h3 id="attach-honeyos-vdi">Attach <code>honeyos.vdi</code></h3>
-<p>After building the VDI with <code>./scripts/build-virtualbox-disk.sh</code>:</p>
+<p>After obtaining <code>honeyos.vdi</code>:</p>
 <ol>
 <li>Select the VM in VirtualBox.</li>
 <li>Open <code>Settings</code>.</li>
@@ -202,8 +245,8 @@ cargo install bootimage</code></pre>
 <li>Save the settings.</li>
 </ol>
 <figure><img src="images/attach-os-vdi.png" alt="VirtualBox storage settings with honeyos.vdi attached"></figure>
-<p class="caption">Caption: Attach the generated <code>honeyos.vdi</code> file as the VM&#x27;s hard disk.</p>
-<h3 id="boot-the-os">Boot the OS</h3>
+<p class="caption">Caption: Attach the <code>honeyos.vdi</code> file as the VM&#x27;s hard disk.</p>
+<h3 id="boot-the-os-in-virtualbox">Boot the OS in VirtualBox</h3>
 <p>Start the VM. A successful boot shows the honeyOS desktop.</p>
 <figure><img src="images/desktop-view.png" alt="honeyOS desktop after boot"></figure>
 <p class="caption">Caption: The desktop shows the <code>File Manager</code> and <code>Allocation Table</code> apps.</p>
@@ -572,10 +615,8 @@ rustup component add rust-src llvm-tools-preview</code></pre>
 <h3 id="files-disappear-after-restarting">Files disappear after restarting</h3>
 <p>This is expected in the current implementation. The file system is in memory only and does not write user files to the VDI.</p>
 <h2 id="ix-demonstration-flow">IX. Demonstration Flow</h2>
-<p>Use this short flow for a clean demonstration:</p>
+<p>Use this short flow for a clean demonstration. First boot honeyOS by using one of the two run paths: run <code>cargo run</code> for the source-code QEMU path, or start the VirtualBox VM that has <code>honeyos.vdi</code> attached.</p>
 <ol>
-<li>Build the VDI with <code>./scripts/build-virtualbox-disk.sh</code>.</li>
-<li>Start the VirtualBox VM.</li>
 <li>Open <code>File Manager</code>.</li>
 <li>Create a file named <code>notes.txt</code>.</li>
 <li>Type:</li>
