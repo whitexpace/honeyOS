@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>XSpace OS User Manual</title>
+  <style>
+@page { size: A4; margin: 18mm 17mm 20mm; }
+body {
+  margin: 0;
+  color: #172033;
+  background: #ffffff;
+  font: 10.5pt/1.45 "Aptos", "Helvetica Neue", Arial, sans-serif;
+}
+main { max-width: 780px; margin: 0 auto; }
+h1, h2, h3 { color: #102a43; line-height: 1.2; page-break-after: avoid; }
+h1 {
+  margin: 0 0 10px;
+  padding: 22px 24px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #12355b, #087f8c);
+  border-radius: 10px;
+  font-size: 30pt;
+}
+h2 { margin-top: 26px; padding-bottom: 5px; border-bottom: 2px solid #d6e2f0; }
+h3 { margin-top: 18px; }
+p { margin: 8px 0; }
+.callout { margin: 14px 0; padding: 10px 12px; border-left: 4px solid #087f8c; background: #eef9fb; border-radius: 6px; }
+.important { border-left-color: #b45309; background: #fff7ed; }
+ul, ol { margin: 7px 0 11px 22px; padding: 0; }
+li { margin: 3px 0; }
+table { width: 100%; margin: 11px 0 16px; border-collapse: collapse; page-break-inside: avoid; font-size: 9.5pt; }
+th { color: #ffffff; background: #12355b; text-align: left; }
+th, td { padding: 7px 8px; border: 1px solid #cbd5e1; vertical-align: top; }
+tr:nth-child(even) td { background: #f8fafc; }
+code { font-family: "SFMono-Regular", Menlo, Consolas, monospace; color: #0f3d5f; background: #eef3f8; border: 1px solid #d7e0ea; border-radius: 4px; padding: 1px 4px; }
+pre { margin: 10px 0 14px; padding: 11px 13px; white-space: pre-wrap; color: #e5eef8; background: #0b1220; border-radius: 8px; page-break-inside: avoid; }
+pre code { color: inherit; background: transparent; border: 0; padding: 0; }
+figure { margin: 14px 0 6px; page-break-inside: avoid; }
+img { display: block; width: 100%; max-height: 132mm; object-fit: contain; border: 1px solid #b9c6d3; border-radius: 8px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); }
+.caption { margin: 4px 0 16px; color: #536579; font-size: 9pt; font-style: italic; }
+.pagebreak { break-after: page; page-break-after: always; }
+a { color: #075985; text-decoration: none; }
+</style>
+</head>
+<body>
+  <main>
+<h1 id="xspace-os-user-manual">XSpace OS User Manual</h1>
+<p><strong>By Whitexpace</strong></p>
+<p><strong>Members:</strong></p>
+<ul>
+<li>Guarin, Nicolete Rein</li>
+<li>Legaspo, Jed Lordy</li>
+<li>Pagaran, Niño Christian</li>
+<li>Solis, Glen</li>
+</ul>
+<div class="pagebreak"></div>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href=\"#i-introduction-and-scope\">I. Introduction and Scope</a></li>
+<li><a href=\"#ii-requirements-and-project-setup\">II. Requirements and Project Setup</a></li>
+<li><a href=\"#iii-build-and-boot-procedures\">III. Build and Boot Procedures</a></li>
+<li><a href=\"#iv-desktop-and-application-navigation\">IV. Desktop and Application Navigation</a></li>
+<li><a href=\"#v-file-editing-workflow\">V. File Editing Workflow</a></li>
+<li><a href=\"#vi-allocation-table-and-file-system-model\">VI. Allocation Table and File System Model</a></li>
+<li><a href=\"#vii-keyboard-reference\">VII. Keyboard Reference</a></li>
+<li><a href=\"#viii-troubleshooting\">VIII. Troubleshooting</a></li>
+<li><a href=\"#ix-demonstration-flow\">IX. Demonstration Flow</a></li>
+</ul>
+<div class="pagebreak"></div>
+<h2 id="i-introduction-and-scope">I. Introduction and Scope</h2>
+<p>XSpace OS is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
+<p>This manual describes the features implemented in the current repository. The details were checked against <code>src/main.rs</code>, <code>src/shell.rs</code>, <code>src/keyboard.rs</code>, <code>src/fs.rs</code>, <code>.cargo/config.toml</code>, and <code>scripts/build-virtualbox-disk.sh</code>.</p>
+<p class="callout important">Important: the current file system is stored in RAM only. Files are lost when the virtual machine is restarted, reset, or powered off.</p>
+<h3 id="current-capabilities">Current Capabilities</h3>
+<p>The current build includes:</p>
+<ul>
+<li>a keyboard-driven desktop</li>
+<li>a <code>File Manager</code> app</li>
+<li>an <code>Allocation Table</code> app</li>
+<li>text file creation</li>
+<li>text file opening and editing</li>
+<li>file saving through <code>Ctrl+S</code></li>
+<li>file renaming through <code>Ctrl+R</code></li>
+<li>file deletion from the file manager</li>
+<li>cursor movement inside the editor</li>
+<li>Caps Lock and Shift support for text entry</li>
+<li>a simulated indexed-allocation file system</li>
+</ul>
+<h3 id="current-boundaries">Current Boundaries</h3>
+<p>The current build does not include:</p>
+<ul>
+<li>persistent disk storage for user-created files</li>
+<li>mouse support</li>
+<li>multitasking</li>
+<li>a graphical window system</li>
+<li>an installer ISO</li>
+</ul>
+<h2 id="ii-requirements-and-project-setup">II. Requirements and Project Setup</h2>
+<h3 id="host-tools">Host Tools</h3>
+<p>Install these tools on the host computer before building the OS:</p>
+<ul>
+<li>Rust and Cargo through <code>rustup</code></li>
+<li>a nightly Rust toolchain</li>
+<li>the <code>rust-src</code> component</li>
+<li>the <code>llvm-tools-preview</code> component</li>
+<li><code>bootimage</code></li>
+<li>QEMU tools</li>
+<li>VirtualBox, if the generated VDI will be run in VirtualBox</li>
+</ul>
+<p>Check the installed tools with:</p>
+<pre><code class="language-sh">rustup --version
+cargo --version
+qemu-img --version
+VBoxManage --version</code></pre>
+<h3 id="rust-toolchain-setup">Rust Toolchain Setup</h3>
+<p>Run this setup once from the project root:</p>
+<pre><code class="language-sh">rustup toolchain install nightly
+rustup override set nightly
+rustup component add rust-src llvm-tools-preview
+cargo install bootimage</code></pre>
+<p>This project requires nightly Rust because <code>.cargo/config.toml</code> uses a custom bare-metal target and <code>build-std</code>.</p>
+<h3 id="project-root">Project Root</h3>
+<p>Use the project root folder, meaning the folder that contains <code>Cargo.toml</code>, <code>Cargo.lock</code>, <code>src/</code>, <code>docs/</code>, and <code>scripts/</code>.</p>
+<p>Move into that folder before running build commands:</p>
+<pre><code class="language-sh">cd path/to/xspaceos</code></pre>
+<p>Replace <code>path/to/xspaceos</code> with the actual project location on the computer being used.</p>
+<h2 id="iii-build-and-boot-procedures">III. Build and Boot Procedures</h2>
+<h3 id="build-the-kernel">Build the Kernel</h3>
+<p>To compile the kernel:</p>
+<pre><code class="language-sh">cargo build</code></pre>
+<p>To create the bootable raw disk image:</p>
+<pre><code class="language-sh">cargo bootimage</code></pre>
+<p>The raw image is created at:</p>
+<pre><code class="language-text">target/x86_64-xspaceos/debug/bootimage-xspaceos.bin</code></pre>
+<h3 id="build-the-virtualbox-disk">Build the VirtualBox Disk</h3>
+<p>To create the VirtualBox disk image, use the helper script:</p>
+<pre><code class="language-sh">./scripts/build-virtualbox-disk.sh</code></pre>
+<p>The script runs <code>cargo bootimage</code>, then converts the raw image into:</p>
+<pre><code class="language-text">xspaceos.vdi</code></pre>
+<h3 id="run-with-qemu">Run with QEMU</h3>
+<p>QEMU is the reference environment for this project.</p>
+<p>From the project root, run:</p>
+<pre><code class="language-sh">cargo run</code></pre>
+<p>Cargo uses the configured <code>bootimage runner</code>, which starts QEMU with the generated boot image.</p>
+<p>Manual QEMU command:</p>
+<pre><code class="language-sh">qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage-xspaceos.bin</code></pre>
+<h3 id="create-the-virtualbox-machine">Create the VirtualBox Machine</h3>
+<p>XSpace OS does not use an ISO installer. In VirtualBox, boot from the generated <code>xspaceos.vdi</code> disk instead.</p>
+<ol>
+<li>Open VirtualBox.</li>
+<li>Click <code>New</code>.</li>
+<li>Use a VM name such as <code>XSpace OS</code>.</li>
+<li>Leave the ISO image field empty.</li>
+<li>Set <code>OS</code> to <code>Other</code>.</li>
+<li>Set <code>OS Version</code> to <code>Other/Unknown (64-bit)</code>.</li>
+<li>Continue to the hardware screen.</li>
+</ol>
+<figure><img src="images/VM-Config-1.png" alt="VirtualBox VM name and OS settings"></figure>
+<p class="caption">Caption: Create the VM without an ISO image and use an <code>Other/Unknown (64-bit)</code> guest type.</p>
+<h3 id="configure-virtual-hardware">Configure Virtual Hardware</h3>
+<p>Recommended VM settings:</p>
+<ul>
+<li>Base Memory: <code>128 MB</code> minimum; <code>256 MB</code> is fine</li>
+<li>CPUs: <code>1</code></li>
+<li>EFI: disabled</li>
+<li>Boot mode: legacy BIOS</li>
+</ul>
+<figure><img src="images/VM-Config-2.png" alt="VirtualBox memory, CPU, disk, and EFI settings"></figure>
+<p class="caption">Caption: Keep <code>Use EFI</code> unchecked. The current boot image expects legacy BIOS boot.</p>
+<p>VirtualBox may ask for a virtual hard disk size during VM creation. It is fine to finish the wizard, because the generated <code>xspaceos.vdi</code> will be attached in the next step.</p>
+<h3 id="attach-xspaceos-vdi">Attach <code>xspaceos.vdi</code></h3>
+<p>After building the VDI with <code>./scripts/build-virtualbox-disk.sh</code>:</p>
+<ol>
+<li>Select the VM in VirtualBox.</li>
+<li>Open <code>Settings</code>.</li>
+<li>Open <code>Storage</code>.</li>
+<li>Remove any temporary blank disk if VirtualBox created one.</li>
+<li>Attach <code>xspaceos.vdi</code> as the VM hard disk.</li>
+<li>Save the settings.</li>
+</ol>
+<figure><img src="images/attach-os-vdi.png" alt="VirtualBox storage settings with xspaceos.vdi attached"></figure>
+<p class="caption">Caption: Attach the generated <code>xspaceos.vdi</code> file as the VM&#x27;s hard disk.</p>
+<h3 id="boot-the-os">Boot the OS</h3>
+<p>Start the VM. A successful boot shows the XSpace OS desktop.</p>
+<figure><img src="images/desktop-view.png" alt="XSpace OS desktop after boot"></figure>
+<p class="caption">Caption: The desktop shows the <code>File Manager</code> and <code>Allocation Table</code> apps.</p>
+<h2 id="iv-desktop-and-application-navigation">IV. Desktop and Application Navigation</h2>
+<h3 id="desktop-screen">Desktop Screen</h3>
+<p>The desktop is the first screen after boot.</p>
+<p>Desktop controls:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Up</code> / <code>Down</code></td>
+<td>Move the highlighted selection.</td>
+</tr>
+<tr>
+<td><code>Enter</code></td>
+<td>Open the selected app.</td>
+</tr>
+</tbody>
+</table>
+<p>Available apps:</p>
+<table>
+<thead>
+<tr>
+<th>App</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>File Manager</code></td>
+<td>Create, open, edit, rename, and delete files.</td>
+</tr>
+<tr>
+<td><code>Allocation Table</code></td>
+<td>Inspect simulated file allocation blocks.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="file-manager-screen">File Manager Screen</h3>
+<p>Open <code>File Manager</code> from the desktop by leaving it highlighted and pressing <code>Enter</code>.</p>
+<p>The file manager shows:</p>
+<ul>
+<li><code>[ + New File ]</code> at the top</li>
+<li>existing files below it</li>
+<li>each file&#x27;s current size in bytes</li>
+</ul>
+<figure><img src="images/new-file.png" alt="File manager with the New File action and a sample file"></figure>
+<p class="caption">Caption: The file manager lists files and shows each file&#x27;s byte count.</p>
+<p>File manager controls:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Up</code> / <code>Down</code></td>
+<td>Move the highlighted selection.</td>
+</tr>
+<tr>
+<td><code>Enter</code> on <code>[ + New File ]</code></td>
+<td>Start creating a new file.</td>
+</tr>
+<tr>
+<td><code>Enter</code> on a file</td>
+<td>Open that file in the editor.</td>
+</tr>
+<tr>
+<td><code>Delete</code> on a file</td>
+<td>Delete the selected file immediately.</td>
+</tr>
+<tr>
+<td><code>Esc</code></td>
+<td>Return to the desktop.</td>
+</tr>
+</tbody>
+</table>
+<p>There is no confirmation prompt before deleting a file. Because the file system is currently in memory only, deleted files cannot be recovered.</p>
+<h2 id="v-file-editing-workflow">V. File Editing Workflow</h2>
+<h3 id="create-a-file">Create a File</h3>
+<ol>
+<li>Open <code>File Manager</code>.</li>
+<li>Highlight <code>[ + New File ]</code>.</li>
+<li>Press <code>Enter</code>.</li>
+<li>Type the file name at the <code>File name:</code> prompt.</li>
+<li>Press <code>Enter</code>.</li>
+</ol>
+<p>If the name is accepted, the editor opens automatically for the new file.</p>
+<p>File name rules:</p>
+<ul>
+<li>the name cannot be empty</li>
+<li>the name cannot be longer than <code>32</code> bytes</li>
+<li>the name cannot match an existing file</li>
+</ul>
+<p>The OS reports an error if the file table is full or the name already exists. If an empty name is entered, the OS returns to the file manager without creating a file.</p>
+<h3 id="open-a-file">Open a File</h3>
+<ol>
+<li>Open <code>File Manager</code>.</li>
+<li>Highlight the file name.</li>
+<li>Press <code>Enter</code>.</li>
+</ol>
+<p>There is no separate read-only viewer. Files are opened in the editor.</p>
+<h3 id="edit-text">Edit Text</h3>
+<p>The editor is a full-screen text editor. It shows:</p>
+<ul>
+<li>the current file name in the top bar</li>
+<li>editor shortcuts in the top bar</li>
+<li>file contents in the main area</li>
+<li>saved/unsaved status in the bottom bar</li>
+<li>current size out of the <code>512</code> byte limit</li>
+<li><code>CAPS</code> in the bottom bar when Caps Lock is enabled</li>
+</ul>
+<figure><img src="images/edit-file.png" alt="Editor screen with a sample file"></figure>
+<p class="caption">Caption: The editor supports typing, cursor movement, deletion, saving, closing, and renaming.</p>
+<p>Editor controls:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Printable keys</td>
+<td>Insert text at the cursor.</td>
+</tr>
+<tr>
+<td><code>Enter</code></td>
+<td>Insert a newline.</td>
+</tr>
+<tr>
+<td><code>Backspace</code></td>
+<td>Delete the character before the cursor.</td>
+</tr>
+<tr>
+<td><code>Delete</code></td>
+<td>Delete the character at the cursor.</td>
+</tr>
+<tr>
+<td><code>Left</code> / <code>Right</code></td>
+<td>Move the cursor one character left or right.</td>
+</tr>
+<tr>
+<td><code>Up</code> / <code>Down</code></td>
+<td>Move through visual editor rows.</td>
+</tr>
+<tr>
+<td><code>Home</code></td>
+<td>Move to the start of the current visual row.</td>
+</tr>
+<tr>
+<td><code>End</code></td>
+<td>Move to the end of the current visual row.</td>
+</tr>
+<tr>
+<td><code>PageUp</code> / <code>PageDown</code></td>
+<td>Move up or down by one visible editor page.</td>
+</tr>
+<tr>
+<td><code>Ctrl+S</code></td>
+<td>Save the file.</td>
+</tr>
+<tr>
+<td><code>Ctrl+R</code></td>
+<td>Rename the file.</td>
+</tr>
+<tr>
+<td><code>Ctrl+X</code></td>
+<td>Close the editor and return to the file manager.</td>
+</tr>
+</tbody>
+</table>
+<p>Save before closing. <code>Ctrl+X</code> does not ask whether unsaved changes should be kept.</p>
+<h3 id="save-a-file">Save a File</h3>
+<p>Press <code>Ctrl+S</code> inside the editor.</p>
+<p>When saving succeeds, the bottom status bar changes to <code>Saved</code>. Editing after that changes the status back to <code>Unsaved</code>.</p>
+<p>The editor stops accepting more text after the file reaches <code>512</code> bytes.</p>
+<h3 id="rename-a-file">Rename a File</h3>
+<ol>
+<li>Open the file in the editor.</li>
+<li>Press <code>Ctrl+R</code>.</li>
+<li>Type the new name at the <code>New name:</code> prompt.</li>
+<li>Press <code>Enter</code>.</li>
+</ol>
+<figure><img src="images/rename-file.png" alt="Rename prompt"></figure>
+<p class="caption">Caption: Renaming is done from inside the editor.</p>
+<p>Rename rules:</p>
+<ul>
+<li>the new name cannot be empty</li>
+<li>the new name cannot be longer than <code>32</code> bytes</li>
+<li>the new name cannot match an existing file</li>
+</ul>
+<p>Renaming changes only the file name. It does not change the file contents or the file&#x27;s allocated data blocks.</p>
+<h3 id="delete-a-file">Delete a File</h3>
+<ol>
+<li>Open <code>File Manager</code>.</li>
+<li>Highlight the file.</li>
+<li>Press <code>Delete</code>.</li>
+</ol>
+<p>The selected file is removed immediately. Its index block and data blocks are returned to the free block pool.</p>
+<h2 id="vi-allocation-table-and-file-system-model">VI. Allocation Table and File System Model</h2>
+<h3 id="allocation-table-screen">Allocation Table Screen</h3>
+<p>Open <code>Allocation Table</code> from the desktop to inspect the simulated file allocation state.</p>
+<p>The table displays block entries in two columns. Each row contains:</p>
+<ul>
+<li>block number, such as <code>B00</code></li>
+<li>state: <code>USED</code> or <code>FREE</code></li>
+<li>block type: <code>IDX</code>, <code>DAT</code>, or <code>---</code></li>
+<li>owner file name, if the block is used</li>
+</ul>
+<figure><img src="images/file-alloc-table.png" alt="Allocation table with used and free blocks"></figure>
+<p class="caption">Caption: A file uses one <code>IDX</code> block and one or more <code>DAT</code> blocks after content is saved.</p>
+<p>Allocation table controls:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Left</code> / <code>Right</code></td>
+<td>Move between allocation-table pages.</td>
+</tr>
+<tr>
+<td><code>Esc</code></td>
+<td>Return to the desktop.</td>
+</tr>
+</tbody>
+</table>
+<p>The current file system has <code>40</code> simulated blocks, so the allocation table has two pages of <code>20</code> blocks each.</p>
+<h3 id="indexed-allocation-model">Indexed Allocation Model</h3>
+<p>XSpace OS currently uses a fixed-size, in-memory file system. It is designed for a small <code>no_std</code> kernel, so it does not require heap allocation.</p>
+<p>Storage model:</p>
+<ul>
+<li>files are kept in kernel RAM</li>
+<li>each file reserves one index block when created</li>
+<li>file contents are split into <code>128</code> byte data blocks when saved</li>
+<li>each file can own up to four data blocks</li>
+<li>deleting a file frees its index block and data blocks</li>
+<li>saving a file replaces its previous data-block allocation</li>
+</ul>
+<p>After deleting a file, its blocks become <code>FREE</code> again:</p>
+<figure><img src="images/file-alloc-table-after-deleting-a-file.png" alt="Allocation table after deleting a file"></figure>
+<h3 id="file-system-limits">File System Limits</h3>
+<p>Current limits:</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Maximum files</td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td>Maximum file name length</td>
+<td><code>32</code> bytes</td>
+</tr>
+<tr>
+<td>Maximum file content length</td>
+<td><code>512</code> bytes</td>
+</tr>
+<tr>
+<td>Block size</td>
+<td><code>128</code> bytes</td>
+</tr>
+<tr>
+<td>Maximum data blocks per file</td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>Index blocks per file</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>Total simulated blocks</td>
+<td><code>40</code></td>
+</tr>
+<tr>
+<td>Persistence</td>
+<td>None; RAM only</td>
+</tr>
+</tbody>
+</table>
+<p>What this means for users:</p>
+<ul>
+<li>Empty files still use one index block.</li>
+<li>A saved file with 1 to 128 bytes uses one data block.</li>
+<li>A saved file with 129 to 256 bytes uses two data blocks.</li>
+<li>A saved file with 257 to 384 bytes uses three data blocks.</li>
+<li>A saved file with 385 to 512 bytes uses four data blocks.</li>
+<li>Files disappear after reboot or power off.</li>
+</ul>
+<h2 id="vii-keyboard-reference">VII. Keyboard Reference</h2>
+<p>Text input supports standard US keyboard scancode set 1 behavior for the keys implemented by the current driver.</p>
+<p>Supported behavior:</p>
+<ul>
+<li>letters, numbers, spaces, and common punctuation</li>
+<li><code>Shift</code> for uppercase letters</li>
+<li><code>Caps Lock</code> for alphabetic capitalization</li>
+<li><code>Shift</code> with the number row, such as <code>!</code>, <code>@</code>, <code>#</code>, <code>$</code>, <code>%</code>, <code>^</code>, <code>&amp;</code>, <code>*</code>,</li>
+</ul>
+<p><code>(</code>, and <code>)</code></p>
+<ul>
+<li><code>Shift</code> with punctuation, such as <code>_</code>, <code>+</code>, <code>{</code>, <code>}</code>, <code>|</code>, <code>:</code>, <code>&quot;</code>, <code>~</code>,</li>
+</ul>
+<p><code>&lt;</code>, <code>&gt;</code>, and <code>?</code></p>
+<ul>
+<li>left and right arrow keys</li>
+<li><code>Home</code>, <code>End</code>, <code>PageUp</code>, <code>PageDown</code></li>
+<li><code>Backspace</code>, <code>Delete</code>, <code>Enter</code>, and <code>Esc</code></li>
+<li><code>Ctrl+S</code>, <code>Ctrl+R</code>, and <code>Ctrl+X</code> in the editor</li>
+</ul>
+<p>Notes:</p>
+<ul>
+<li>Caps Lock affects letters only.</li>
+<li>Holding Shift while Caps Lock is active types lowercase letters.</li>
+<li>Unsupported key combinations are ignored.</li>
+<li>The OS does not use mouse input.</li>
+</ul>
+<h2 id="viii-troubleshooting">VIII. Troubleshooting</h2>
+<h3 id="cargo-build-reports-build-std-or-target-errors"><code>cargo build</code> reports <code>build-std</code> or target errors</h3>
+<p>Make sure nightly Rust is active and the required components are installed:</p>
+<pre><code class="language-sh">rustup override set nightly
+rustup component add rust-src llvm-tools-preview</code></pre>
+<h3 id="cargo-bootimage-is-not-found"><code>cargo bootimage</code> is not found</h3>
+<p>Install <code>bootimage</code>:</p>
+<pre><code class="language-sh">cargo install bootimage</code></pre>
+<h3 id="qemu-img-is-not-found"><code>qemu-img</code> is not found</h3>
+<p>Install QEMU tools, then verify:</p>
+<pre><code class="language-sh">qemu-img --version</code></pre>
+<h3 id="virtualbox-asks-for-an-iso">VirtualBox asks for an ISO</h3>
+<p>Do not select an ISO. XSpace OS boots from <code>xspaceos.vdi</code>.</p>
+<p>Use this process:</p>
+<ol>
+<li>Create the VM without installation media.</li>
+<li>Finish the VM wizard.</li>
+<li>Open <code>Settings &gt; Storage</code>.</li>
+<li>Attach <code>xspaceos.vdi</code> as the hard disk.</li>
+</ol>
+<h3 id="virtualbox-does-not-boot-the-os">VirtualBox does not boot the OS</h3>
+<p>Check the following:</p>
+<ul>
+<li><code>xspaceos.vdi</code> exists in the project root</li>
+<li>the VDI was rebuilt after the latest code changes</li>
+<li>the VDI is attached as the VM hard disk</li>
+<li>EFI is disabled</li>
+<li>the VM type is a 64-bit <code>Other/Unknown</code> style guest</li>
+<li>the raw image boots with QEMU</li>
+</ul>
+<p>If QEMU boots but VirtualBox does not, use QEMU for the demo. QEMU is the reference platform for this project.</p>
+<h3 id="files-disappear-after-restarting">Files disappear after restarting</h3>
+<p>This is expected in the current implementation. The file system is in memory only and does not write user files to the VDI.</p>
+<h2 id="ix-demonstration-flow">IX. Demonstration Flow</h2>
+<p>Use this short flow for a clean demonstration:</p>
+<ol>
+<li>Build the VDI with <code>./scripts/build-virtualbox-disk.sh</code>.</li>
+<li>Start the VirtualBox VM.</li>
+<li>Open <code>File Manager</code>.</li>
+<li>Create a file named <code>notes.txt</code>.</li>
+<li>Type:</li>
+</ol>
+<pre><code class="language-text">XSpace OS demo file
+Created inside the OS editor
+Files are currently RAM-only</code></pre>
+<ol>
+<li>Press <code>Ctrl+S</code> to save.</li>
+<li>Press <code>Ctrl+R</code> and rename the file to <code>manual.txt</code>.</li>
+<li>Press <code>Ctrl+X</code> to return to the file manager.</li>
+<li>Confirm the renamed file appears with its byte count.</li>
+<li>Press <code>Esc</code> to return to the desktop.</li>
+<li>Open <code>Allocation Table</code>.</li>
+<li>Show the <code>IDX</code> block and <code>DAT</code> block entries for the file.</li>
+</ol>
+<p>This demonstrates booting, file management, editing, saving, renaming, and indexed allocation inspection.</p>
+  </main>
+</body>
+</html>
