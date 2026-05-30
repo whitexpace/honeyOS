@@ -318,9 +318,11 @@ impl FileSystem {
         let idx = self.find(old_name).ok_or(FsError::NotFound)?;
         let file = &mut self.files[idx];
         file.name[..new_name.len()].copy_from_slice(new_name.as_bytes());
-        // Zero out any leftover bytes from a longer previous name.
-        for b in file.name[new_name.len()..file.name_len].iter_mut() {
-            *b = 0;
+        // Zero out leftover bytes only when the old name was longer.
+        if new_name.len() < file.name_len {
+            for b in file.name[new_name.len()..file.name_len].iter_mut() {
+                *b = 0;
+            }
         }
         file.name_len = new_name.len();
         Ok(())
