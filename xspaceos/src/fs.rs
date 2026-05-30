@@ -1,6 +1,6 @@
-//! In-memory file system for XSpace OS.
+//! In-memory file system for HoneyOS.
 //!
-//! XSpace OS has no disk driver yet, so this file system is *not* persistent:
+//! HoneyOS has no disk driver yet, so this file system is *not* persistent:
 //! every file lives in kernel RAM and is lost on reboot. This module models a
 //! small indexed-allocation file system suitable for the course submission:
 //!

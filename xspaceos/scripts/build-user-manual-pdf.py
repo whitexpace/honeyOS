@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the XSpace OS user manual as styled HTML and PDF.
+"""Build the HoneyOS user manual as styled HTML and PDF.
 
 No Pandoc, LaTeX, or Markdown package is required. The script implements the
 small Markdown subset used by docs/USER_MANUAL.md and writes a self-contained
@@ -18,8 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANUAL_MD = ROOT / "docs" / "USER_MANUAL.md"
-MANUAL_HTML = ROOT / "docs" / "XSpace-OS-User-Manual.html"
-MANUAL_PDF = ROOT / "docs" / "XSpace-OS-User-Manual.pdf"
+MANUAL_HTML = ROOT / "docs" / "HoneyOS-User-Manual.html"
+MANUAL_PDF = ROOT / "docs" / "HoneyOS-User-Manual.pdf"
 
 PAGE_W = 595.28
 PAGE_H = 841.89
@@ -28,20 +28,21 @@ MARGIN_R = 46.0
 MARGIN_T = 46.0
 MARGIN_B = 50.0
 CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R
+CODE_PAD_X = 2.2
+CODE_PAD_Y = 1.1
 
 # Pixel crop rectangles, measured from the top-left of the source screenshot.
 # The source screenshots are full-desktop captures; these crops keep the PDF
-# focused on the relevant VirtualBox dialog or XSpace OS screen.
+# focused on the relevant VirtualBox dialog or HoneyOS screen.
 IMAGE_CROPS: dict[str, tuple[int, int, int, int]] = {
-    "images/VM-Config-1.png": (555, 340, 810, 400),
     "images/VM-Config-2.png": (555, 340, 810, 400),
     "images/attach-os-vdi.png": (535, 292, 850, 498),
-    "images/desktop-view.png": (640, 309, 640, 462),
-    "images/new-file.png": (640, 309, 640, 462),
-    "images/edit-file.png": (640, 309, 640, 462),
-    "images/rename-file.png": (640, 309, 640, 462),
-    "images/file-alloc-table.png": (640, 309, 640, 462),
-    "images/file-alloc-table-after-deleting-a-file.png": (640, 309, 640, 462),
+    "images/desktop-view.png": (650, 390, 620, 315),
+    "images/new-file.png": (650, 380, 620, 335),
+    "images/edit-file.png": (640, 333, 640, 385),
+    "images/rename-file.png": (640, 333, 640, 385),
+    "images/file-alloc-table.png": (650, 386, 620, 330),
+    "images/file-alloc-table-after-deleting-a-file.png": (650, 386, 620, 330),
 }
 
 
@@ -281,7 +282,7 @@ body {
   margin: 0;
   color: #172033;
   background: #ffffff;
-  font: 10.5pt/1.45 "Aptos", "Helvetica Neue", Arial, sans-serif;
+  font: 10.5pt/1.45 "Times New Roman", Times, serif;
 }
 main { max-width: 780px; margin: 0 auto; }
 h1, h2, h3 { color: #102a43; line-height: 1.2; page-break-after: avoid; }
@@ -304,9 +305,33 @@ table { width: 100%; margin: 11px 0 16px; border-collapse: collapse; page-break-
 th { color: #ffffff; background: #12355b; text-align: left; }
 th, td { padding: 7px 8px; border: 1px solid #cbd5e1; vertical-align: top; }
 tr:nth-child(even) td { background: #f8fafc; }
-code { font-family: "SFMono-Regular", Menlo, Consolas, monospace; color: #0f3d5f; background: #eef3f8; border: 1px solid #d7e0ea; border-radius: 4px; padding: 1px 4px; }
-pre { margin: 10px 0 14px; padding: 11px 13px; white-space: pre-wrap; color: #e5eef8; background: #0b1220; border-radius: 8px; page-break-inside: avoid; }
-pre code { color: inherit; background: transparent; border: 0; padding: 0; }
+code {
+  font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Courier New", Courier, monospace;
+  font-size: 0.92em;
+  line-height: 1.25;
+  color: #0f3d5f;
+  background: #eef3f8;
+  border: 1px solid #d7e0ea;
+  border-radius: 4px;
+  padding: 0.08em 0.30em;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+pre {
+  margin: 10px 0 14px;
+  padding: 11px 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #e5eef8;
+  background: #0b1220;
+  border-radius: 8px;
+  page-break-inside: avoid;
+  font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Courier New", Courier, monospace;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+pre code { font-family: inherit; font-size: inherit; color: inherit; background: transparent; border: 0; padding: 0; }
 figure { margin: 14px 0 6px; page-break-inside: avoid; }
 img { display: block; width: 100%; max-height: 132mm; object-fit: contain; border: 1px solid #b9c6d3; border-radius: 8px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); }
 .caption { margin: 4px 0 16px; color: #536579; font-size: 9pt; font-style: italic; }
@@ -322,7 +347,7 @@ def write_html(blocks: list[Block]) -> None:
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>XSpace OS User Manual</title>
+  <title>HoneyOS User Manual</title>
   <style>{HTML_CSS}</style>
 </head>
 <body>
@@ -417,7 +442,10 @@ def item_size(item: TextItem, size: float) -> float:
 
 
 def item_width(item: TextItem, size: float) -> float:
-    return text_width(item.text, item_font(item), item_size(item, size))
+    width = text_width(item.text, item_font(item), item_size(item, size))
+    if item.style == "code":
+        return width + CODE_PAD_X * 2
+    return width
 
 
 def wrap_text(text: str, width: float, size: float) -> list[list[TextItem]]:
@@ -669,8 +697,19 @@ class ManualPdf:
             draw_size = item_size(item, size)
             w = item_width(item, size)
             if item.style == "code" and item.text:
-                self.rect(cx - 1.2, y - 2.0, w + 2.4, draw_size + 4.0, fill=(0.93, 0.96, 0.99))
-                self.text(cx, y, item.text, font, draw_size, fill=(0.06, 0.24, 0.37))
+                text_w = text_width(item.text, font, draw_size)
+                box_w = text_w + CODE_PAD_X * 2
+                box_h = draw_size + CODE_PAD_Y * 2
+                self.rect(
+                    cx,
+                    y - CODE_PAD_Y,
+                    box_w,
+                    box_h,
+                    fill=(0.93, 0.96, 0.99),
+                    stroke=(0.83, 0.89, 0.95),
+                    width=0.35,
+                )
+                self.text(cx + CODE_PAD_X, y, item.text, font, draw_size, fill=(0.06, 0.24, 0.37))
             elif item.link:
                 link_color = (0.03, 0.36, 0.53)
                 self.text(cx, y, item.text, font, draw_size, fill=link_color)
@@ -739,7 +778,7 @@ class ManualPdf:
             if len(self.pages) == 1 and len(self.page.ops) == 1:
                 self.title_mode = True
                 self.y = PAGE_H - 230
-                self.centered_text(self.y, "XSpace OS", "F2", 34, fill=(0.07, 0.21, 0.36))
+                self.centered_text(self.y, "HoneyOS", "F2", 34, fill=(0.07, 0.21, 0.36))
                 self.y -= 42
                 self.centered_text(self.y, "User Manual", "F1", 23, fill=(0.03, 0.50, 0.55))
                 self.y -= 22
@@ -931,7 +970,7 @@ class ManualPdf:
                 continue
             self.page = page
             self.line(MARGIN_L, 32, MARGIN_L + CONTENT_W, 32, (0.82, 0.86, 0.90), 0.6)
-            self.text(MARGIN_L, 20, "XSpace OS User Manual", "F1", 8.2, fill=(0.42, 0.49, 0.57))
+            self.text(MARGIN_L, 20, "HoneyOS User Manual", "F1", 8.2, fill=(0.42, 0.49, 0.57))
             page_label = f"Page {idx} of {total}"
             self.text(
                 MARGIN_L + CONTENT_W - text_width(page_label, "F1", 8.2),
@@ -945,9 +984,9 @@ class ManualPdf:
     def write(self, path: Path) -> None:
         image_keys = sorted(self.images)
         font_objects = [
-            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
-            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding /WinAnsiEncoding >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding /WinAnsiEncoding >>",
             b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>",
             b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>",
         ]

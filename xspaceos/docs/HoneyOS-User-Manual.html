@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>XSpace OS User Manual</title>
+  <title>HoneyOS User Manual</title>
   <style>
 @page { size: A4; margin: 18mm 17mm 20mm; }
 body {
   margin: 0;
   color: #172033;
   background: #ffffff;
-  font: 10.5pt/1.45 "Aptos", "Helvetica Neue", Arial, sans-serif;
+  font: 10.5pt/1.45 "Times New Roman", Times, serif;
 }
 main { max-width: 780px; margin: 0 auto; }
 h1, h2, h3 { color: #102a43; line-height: 1.2; page-break-after: avoid; }
@@ -32,9 +32,33 @@ table { width: 100%; margin: 11px 0 16px; border-collapse: collapse; page-break-
 th { color: #ffffff; background: #12355b; text-align: left; }
 th, td { padding: 7px 8px; border: 1px solid #cbd5e1; vertical-align: top; }
 tr:nth-child(even) td { background: #f8fafc; }
-code { font-family: "SFMono-Regular", Menlo, Consolas, monospace; color: #0f3d5f; background: #eef3f8; border: 1px solid #d7e0ea; border-radius: 4px; padding: 1px 4px; }
-pre { margin: 10px 0 14px; padding: 11px 13px; white-space: pre-wrap; color: #e5eef8; background: #0b1220; border-radius: 8px; page-break-inside: avoid; }
-pre code { color: inherit; background: transparent; border: 0; padding: 0; }
+code {
+  font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Courier New", Courier, monospace;
+  font-size: 0.92em;
+  line-height: 1.25;
+  color: #0f3d5f;
+  background: #eef3f8;
+  border: 1px solid #d7e0ea;
+  border-radius: 4px;
+  padding: 0.08em 0.30em;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+pre {
+  margin: 10px 0 14px;
+  padding: 11px 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #e5eef8;
+  background: #0b1220;
+  border-radius: 8px;
+  page-break-inside: avoid;
+  font-family: "JetBrains Mono", "JetBrainsMono Nerd Font", "Courier New", Courier, monospace;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+pre code { font-family: inherit; font-size: inherit; color: inherit; background: transparent; border: 0; padding: 0; }
 figure { margin: 14px 0 6px; page-break-inside: avoid; }
 img { display: block; width: 100%; max-height: 132mm; object-fit: contain; border: 1px solid #b9c6d3; border-radius: 8px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); }
 .caption { margin: 4px 0 16px; color: #536579; font-size: 9pt; font-style: italic; }
@@ -44,7 +68,7 @@ a { color: #075985; text-decoration: none; }
 </head>
 <body>
   <main>
-<h1 id="xspace-os-user-manual">XSpace OS User Manual</h1>
+<h1 id="honeyos-user-manual">HoneyOS User Manual</h1>
 <p><strong>By Whitexpace</strong></p>
 <p><strong>Members:</strong></p>
 <ul>
@@ -68,7 +92,7 @@ a { color: #075985; text-decoration: none; }
 </ul>
 <div class="pagebreak"></div>
 <h2 id="i-introduction-and-scope">I. Introduction and Scope</h2>
-<p>XSpace OS is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
+<p>HoneyOS is a small Rust operating system kernel that boots directly in a virtual machine. It uses VGA text mode for screen output and a polled PS/2 keyboard driver for input.</p>
 <p>This manual describes the features implemented in the current repository. The details were checked against <code>src/main.rs</code>, <code>src/shell.rs</code>, <code>src/keyboard.rs</code>, <code>src/fs.rs</code>, <code>.cargo/config.toml</code>, and <code>scripts/build-virtualbox-disk.sh</code>.</p>
 <p class="callout important">Important: the current file system is stored in RAM only. Files are lost when the virtual machine is restarted, reset, or powered off.</p>
 <h3 id="current-capabilities">Current Capabilities</h3>
@@ -122,8 +146,8 @@ cargo install bootimage</code></pre>
 <h3 id="project-root">Project Root</h3>
 <p>Use the project root folder, meaning the folder that contains <code>Cargo.toml</code>, <code>Cargo.lock</code>, <code>src/</code>, <code>docs/</code>, and <code>scripts/</code>.</p>
 <p>Move into that folder before running build commands:</p>
-<pre><code class="language-sh">cd path/to/xspaceos</code></pre>
-<p>Replace <code>path/to/xspaceos</code> with the actual project location on the computer being used.</p>
+<pre><code class="language-sh">cd path/to/project-root</code></pre>
+<p>Replace <code>path/to/project-root</code> with the actual project location on the computer being used.</p>
 <h2 id="iii-build-and-boot-procedures">III. Build and Boot Procedures</h2>
 <h3 id="build-the-kernel">Build the Kernel</h3>
 <p>To compile the kernel:</p>
@@ -145,18 +169,17 @@ cargo install bootimage</code></pre>
 <p>Manual QEMU command:</p>
 <pre><code class="language-sh">qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage-xspaceos.bin</code></pre>
 <h3 id="create-the-virtualbox-machine">Create the VirtualBox Machine</h3>
-<p>XSpace OS does not use an ISO installer. In VirtualBox, boot from the generated <code>xspaceos.vdi</code> disk instead.</p>
+<p>HoneyOS does not use an ISO installer. In VirtualBox, boot from the generated <code>xspaceos.vdi</code> disk instead.</p>
 <ol>
 <li>Open VirtualBox.</li>
 <li>Click <code>New</code>.</li>
-<li>Use a VM name such as <code>XSpace OS</code>.</li>
+<li>Use a VM name such as <code>HoneyOS</code>.</li>
 <li>Leave the ISO image field empty.</li>
 <li>Set <code>OS</code> to <code>Other</code>.</li>
 <li>Set <code>OS Version</code> to <code>Other/Unknown (64-bit)</code>.</li>
 <li>Continue to the hardware screen.</li>
 </ol>
-<figure><img src="images/VM-Config-1.png" alt="VirtualBox VM name and OS settings"></figure>
-<p class="caption">Caption: Create the VM without an ISO image and use an <code>Other/Unknown (64-bit)</code> guest type.</p>
+<p>Create the VM without an ISO image and use an <code>Other/Unknown (64-bit)</code> guest type.</p>
 <h3 id="configure-virtual-hardware">Configure Virtual Hardware</h3>
 <p>Recommended VM settings:</p>
 <ul>
@@ -181,8 +204,8 @@ cargo install bootimage</code></pre>
 <figure><img src="images/attach-os-vdi.png" alt="VirtualBox storage settings with xspaceos.vdi attached"></figure>
 <p class="caption">Caption: Attach the generated <code>xspaceos.vdi</code> file as the VM&#x27;s hard disk.</p>
 <h3 id="boot-the-os">Boot the OS</h3>
-<p>Start the VM. A successful boot shows the XSpace OS desktop.</p>
-<figure><img src="images/desktop-view.png" alt="XSpace OS desktop after boot"></figure>
+<p>Start the VM. A successful boot shows the HoneyOS desktop.</p>
+<figure><img src="images/desktop-view.png" alt="HoneyOS desktop after boot"></figure>
 <p class="caption">Caption: The desktop shows the <code>File Manager</code> and <code>Allocation Table</code> apps.</p>
 <h2 id="iv-desktop-and-application-navigation">IV. Desktop and Application Navigation</h2>
 <h3 id="desktop-screen">Desktop Screen</h3>
@@ -423,7 +446,7 @@ cargo install bootimage</code></pre>
 </table>
 <p>The current file system has <code>40</code> simulated blocks, so the allocation table has two pages of <code>20</code> blocks each.</p>
 <h3 id="indexed-allocation-model">Indexed Allocation Model</h3>
-<p>XSpace OS currently uses a fixed-size, in-memory file system. It is designed for a small <code>no_std</code> kernel, so it does not require heap allocation.</p>
+<p>HoneyOS currently uses a fixed-size, in-memory file system. It is designed for a small <code>no_std</code> kernel, so it does not require heap allocation.</p>
 <p>Storage model:</p>
 <ul>
 <li>files are kept in kernel RAM</li>
@@ -527,7 +550,7 @@ rustup component add rust-src llvm-tools-preview</code></pre>
 <p>Install QEMU tools, then verify:</p>
 <pre><code class="language-sh">qemu-img --version</code></pre>
 <h3 id="virtualbox-asks-for-an-iso">VirtualBox asks for an ISO</h3>
-<p>Do not select an ISO. XSpace OS boots from <code>xspaceos.vdi</code>.</p>
+<p>Do not select an ISO. HoneyOS boots from <code>xspaceos.vdi</code>.</p>
 <p>Use this process:</p>
 <ol>
 <li>Create the VM without installation media.</li>
@@ -557,7 +580,7 @@ rustup component add rust-src llvm-tools-preview</code></pre>
 <li>Create a file named <code>notes.txt</code>.</li>
 <li>Type:</li>
 </ol>
-<pre><code class="language-text">XSpace OS demo file
+<pre><code class="language-text">HoneyOS demo file
 Created inside the OS editor
 Files are currently RAM-only</code></pre>
 <ol>

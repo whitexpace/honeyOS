@@ -1,4 +1,4 @@
-//! Interactive UI for XSpace OS.
+//! Interactive UI for HoneyOS.
 //!
 //! Screen flow:
 //!   Desktop  →  File Manager  →  Editor
@@ -79,7 +79,7 @@ pub fn run(fs: &mut FileSystem) -> ! {
 fn draw_desktop(selected: usize) {
     vga_buffer::clear_screen();
 
-    vga_buffer::write_at(1, 2, "XSpace OS", Color::Yellow, Color::Black);
+    vga_buffer::write_at(1, 2, "HoneyOS", Color::Yellow, Color::Black);
     vga_buffer::write_at(
         2,
         2,
@@ -160,7 +160,7 @@ fn draw_file_manager(fs: &FileSystem, selected: usize) {
     vga_buffer::write_at(
         0,
         2,
-        "XSpace OS  --  File Manager",
+        "HoneyOS  --  File Manager",
         Color::Yellow,
         Color::Black,
     );
@@ -308,7 +308,7 @@ fn draw_allocation_table(fs: &FileSystem, page: usize) {
     vga_buffer::write_at(
         0,
         2,
-        "XSpace OS  --  Allocation Table",
+        "HoneyOS  --  Allocation Table",
         Color::Yellow,
         Color::Black,
     );

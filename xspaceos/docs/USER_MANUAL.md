@@ -1,4 +1,4 @@
-# XSpace OS User Manual
+# HoneyOS User Manual
 
 **By Whitexpace**
 
@@ -27,7 +27,7 @@
 
 ## I. Introduction and Scope
 
-XSpace OS is a small Rust operating system kernel that boots directly in a
+HoneyOS is a small Rust operating system kernel that boots directly in a
 virtual machine. It uses VGA text mode for screen output and a polled PS/2
 keyboard driver for input.
 
@@ -109,10 +109,10 @@ Use the project root folder, meaning the folder that contains `Cargo.toml`,
 Move into that folder before running build commands:
 
 ```sh
-cd path/to/xspaceos
+cd path/to/project-root
 ```
 
-Replace `path/to/xspaceos` with the actual project location on the computer
+Replace `path/to/project-root` with the actual project location on the computer
 being used.
 
 ## III. Build and Boot Procedures
@@ -172,21 +172,19 @@ qemu-system-x86_64 -drive format=raw,file=target/x86_64-xspaceos/debug/bootimage
 
 ### Create the VirtualBox Machine
 
-XSpace OS does not use an ISO installer. In VirtualBox, boot from the generated
+HoneyOS does not use an ISO installer. In VirtualBox, boot from the generated
 `xspaceos.vdi` disk instead.
 
 1. Open VirtualBox.
 2. Click `New`.
-3. Use a VM name such as `XSpace OS`.
+3. Use a VM name such as `HoneyOS`.
 4. Leave the ISO image field empty.
 5. Set `OS` to `Other`.
 6. Set `OS Version` to `Other/Unknown (64-bit)`.
 7. Continue to the hardware screen.
 
-![VirtualBox VM name and OS settings](images/VM-Config-1.png)
-
-Caption: Create the VM without an ISO image and use an `Other/Unknown (64-bit)`
-guest type.
+Create the VM without an ISO image and use an `Other/Unknown (64-bit)` guest
+type.
 
 ### Configure Virtual Hardware
 
@@ -223,9 +221,9 @@ Caption: Attach the generated `xspaceos.vdi` file as the VM's hard disk.
 
 ### Boot the OS
 
-Start the VM. A successful boot shows the XSpace OS desktop.
+Start the VM. A successful boot shows the HoneyOS desktop.
 
-![XSpace OS desktop after boot](images/desktop-view.png)
+![HoneyOS desktop after boot](images/desktop-view.png)
 
 Caption: The desktop shows the `File Manager` and `Allocation Table` apps.
 
@@ -412,7 +410,7 @@ two pages of `20` blocks each.
 
 ### Indexed Allocation Model
 
-XSpace OS currently uses a fixed-size, in-memory file system. It is designed
+HoneyOS currently uses a fixed-size, in-memory file system. It is designed
 for a small `no_std` kernel, so it does not require heap allocation.
 
 Storage model:
@@ -507,7 +505,7 @@ qemu-img --version
 
 ### VirtualBox asks for an ISO
 
-Do not select an ISO. XSpace OS boots from `xspaceos.vdi`.
+Do not select an ISO. HoneyOS boots from `xspaceos.vdi`.
 
 Use this process:
 
@@ -546,7 +544,7 @@ Use this short flow for a clean demonstration:
 5. Type:
 
 ```text
-XSpace OS demo file
+HoneyOS demo file
 Created inside the OS editor
 Files are currently RAM-only
 ```

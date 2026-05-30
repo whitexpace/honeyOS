@@ -1,4 +1,4 @@
-//! VGA text-mode driver for XSpace OS.
+//! VGA text-mode driver for HoneyOS.
 //!
 //! The PC VGA text buffer is memory-mapped at physical address `0xb8000`.
 //! It is a grid of 80x25 cells; each cell is two bytes: an ASCII code byte
