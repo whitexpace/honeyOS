@@ -565,9 +565,11 @@ fn editor(fs: &mut FileSystem, mut name_buf: [u8; 32], mut name_len: usize) {
                 let old_name = core::str::from_utf8(&name_buf[..name_len]).unwrap_or("");
                 match fs.rename(old_name, new_name) {
                     Ok(()) => {
-                        // Clear stale bytes from the longer old name first.
-                        for b in name_buf[new_len..name_len].iter_mut() {
-                            *b = 0;
+                        // Clear stale bytes only when the previous name was longer.
+                        if new_len < name_len {
+                            for b in name_buf[new_len..name_len].iter_mut() {
+                                *b = 0;
+                            }
                         }
                         name_buf[..new_len].copy_from_slice(&new_buf[..new_len]);
                         name_len = new_len;
